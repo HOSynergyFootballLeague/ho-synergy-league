@@ -112,14 +112,15 @@ function teams(){
  else h+=`<div class="card"><b>Đăng ký vào ${e(T[i])}</b><div class="row"><input id="rn" placeholder="Tên cầu thủ" value="${e(mine?.name||"")}"><input id="rk" type="number" min="0" max="99" placeholder="Số áo"><button class="b" data-a="reg">Đăng ký</button></div></div>`;
  return h}
 
+function zaloBtn(){const z=S.cfg.main?.zalo||"",ok=/^https?:\/\//.test(z);
+ return `<div class="card" style="text-align:center">${ok?`<a class="b" href="${e(z)}" target="_blank" rel="noopener">💬 Liên kết bot Zalo</a>`:`<button class="b" data-a="nozalo">💬 Liên kết bot Zalo</button>`}<div class="sm mut" style="margin-top:6px">Nhận nhắc lịch thi đấu và kết quả qua Zalo.</div>${S.admin?`<div class="row" style="justify-content:center"><input id="zl" placeholder="Link bot/nhóm Zalo (admin)" value="${e(z)}"><button class="b s" data-a="zalo">Lưu link</button></div>`:""}</div>`}
 function me(){
- if(!S.uid)return `<div class="card"><b>Đăng nhập / Đăng ký</b><div class="row"><input id="ae" type="email" placeholder="Email"><input id="ap" type="password" placeholder="Mật khẩu (từ 6 ký tự)"></div><div class="row"><input id="an" placeholder="Tên hiển thị (khi đăng ký)"></div><div class="row"><button class="b" data-a="login">Đăng nhập</button><button class="b s" data-a="signup">Đăng ký tài khoản</button></div></div>`;
+ if(!S.uid)return zaloBtn()+`<div class="card"><b>Đăng nhập / Đăng ký</b><div class="row"><input id="ae" type="email" placeholder="Email"><input id="ap" type="password" placeholder="Mật khẩu (từ 6 ký tự)"></div><div class="row"><input id="an" placeholder="Tên hiển thị (khi đăng ký)"></div><div class="row"><button class="b" data-a="login">Đăng nhập</button><button class="b s" data-a="signup">Đăng ký tài khoản</button></div></div>`;
  const p=S.players[S.uid]||{};
- return `<div class="card" style="text-align:center">${pav(p,80)}<div><label class="b s sm" style="margin-top:8px">Đổi avatar<input type="file" accept="image/*" data-c="av" hidden></label></div></div>
+ return zaloBtn()+`<div class="card" style="text-align:center">${pav(p,80)}<div><label class="b s sm" style="margin-top:8px">Đổi avatar<input type="file" accept="image/*" data-c="av" hidden></label></div></div>
  <div class="card"><div class="row"><label>Tên<br><input id="pn" value="${e(p.name||"")}"></label><label>Ngày sinh<br><input id="pb" type="date" value="${e(p.bd||"")}"></label></div>
  <div class="sm mut">Đội: ${p.team!=null?e(T[p.team])+" · số áo "+e(p.num):"chưa đăng ký"}${p.cancel?" (đang chờ hủy)":""}${S.admin?" · Admin":""}</div><div class="row"><button class="b" data-a="savep">Lưu hồ sơ</button></div></div>
  <div class="card"><b>Đổi mật khẩu</b><div class="row"><input id="np" type="password" placeholder="Mật khẩu mới"><button class="b s" data-a="chpw">Đổi</button></div></div>
- <div class="card"><b>Bot Zalo của nhóm</b><div class="row">${S.cfg.main?.zalo?`<a class="b" href="${e(S.cfg.main.zalo)}" target="_blank" rel="noopener">Kết nối bot Zalo</a>`:`<span class="mut sm">Admin chưa cài link bot Zalo.</span>`}</div>${S.admin?`<div class="row"><input id="zl" placeholder="Link bot/nhóm Zalo" value="${e(S.cfg.main?.zalo||"")}"><button class="b s" data-a="zalo">Lưu link</button></div>`:""}</div>
  <button class="b x" data-a="logout">Đăng xuất</button>`}
 
 let dirty=false;
@@ -148,6 +149,7 @@ const W=async fn=>{try{await fn();await load()}catch(x){alert(x.message||x)}};
 const syncDraft=()=>{if(S.draft){S.draft.h=$("#eh")?.value===""?"":+$("#eh").value;S.draft.a=$("#ea")?.value===""?"":+$("#ea").value;S.draft.ref=$("#er")?.value??S.draft.ref}};
 const shrink=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const c=document.createElement("canvas");c.width=c.height=96;const s=Math.min(i.width,i.height);c.getContext("2d").drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,96,96);res(c.toDataURL("image/jpeg",.8))};i.onerror=rej;i.src=r.result};r.readAsDataURL(f)});
 const A={
+ nozalo:()=>alert("Admin chưa cài link bot Zalo."),
  tab:d=>{S.tab=d.t;S.open=null;draw(1)},open:d=>{S.open=+d.i;draw(1)},back:()=>{S.open=null;draw(1)},
  login:()=>W(()=>X(sb.auth.signInWithPassword({email:$("#ae").value.trim(),password:$("#ap").value}))),
  signup:()=>W(async()=>{const r=await X(sb.auth.signUp({email:$("#ae").value.trim(),password:$("#ap").value,options:{data:{name:$("#an").value.trim()}}}));if(!r.data.session)alert("Đã đăng ký. Kiểm tra email để xác nhận rồi đăng nhập.")}),
