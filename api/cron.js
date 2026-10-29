@@ -68,6 +68,9 @@ module.exports = async (req, res) => {
   if (!okAuth) return res.status(401).json({ error: "unauthorized" });
   try {
     if (q.mode === "updates") return res.status(200).json(await zalo("getUpdates", { timeout: "5" }));
+    if (q.mode === "webhookinfo") return res.status(200).json(await zalo("getWebhookInfo"));
+    if (q.mode === "setwebhook") return res.status(200).json(await zalo("setWebhook", { url: E.SITE_URL.replace(/\/$/, "") + "/api/hook", secret_token: E.CRON_SECRET }));
+    if (q.mode === "delwebhook") return res.status(200).json(await zalo("deleteWebhook"));
     const today = q.date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
     const yest = new Date(Date.parse(today + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
     const [all, events] = await Promise.all([sbGet("matches", "&order=round,id"), sbGet("events")]);
