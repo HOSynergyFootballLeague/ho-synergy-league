@@ -164,7 +164,14 @@ const A={
  unedit:()=>{S.edit=null;S.draft=null;draw(1)},
  aev:()=>{syncDraft();const n=$("#en").value.trim();if(!n)return alert("Nhập tên cầu thủ.");S.draft.ev.push({t:$("#et").value,tm:+$("#etm").value,n});draw(1)},
  dev:d=>{syncDraft();S.draft.ev.splice(+d.i,1);draw(1)},
- sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");W(async()=>{await X(sb.from("matches").update({hg:d.h,ag:d.a,referee:(d.ref??"").trim()||null}).eq("id",id));await X(sb.from("events").delete().eq("match_id",id));if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n}))));S.edit=null;S.draft=null})}
+ sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");const pn=$("#en")?.value.trim();if(pn)d.ev.push({t:$("#et").value,tm:+$("#etm").value,n:pn});W(async()=>{
+ const r=await X(sb.from("matches").update({hg:d.h,ag:d.a}).eq("id",id).select());
+ if(!r.data.length)throw new Error("Không lưu được: tài khoản chưa có quyền admin (xem lại bước 6).");
+ await X(sb.from("events").delete().eq("match_id",id));
+ if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n}))));
+ const rf=await sb.from("matches").update({referee:(d.ref??"").trim()||null}).eq("id",id);
+ S.edit=null;S.draft=null;
+ alert(rf.error?"Đã lưu kết quả, nhưng chưa lưu được trọng tài: cần chạy lệnh SQL thêm cột referee trong Supabase.":"Đã lưu kết quả.")})}
 };
 const C={
  rd:t=>{S.rd=t.value;draw(1)},tm:t=>{S.tm=t.value;draw(1)},
