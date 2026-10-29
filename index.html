@@ -84,12 +84,13 @@ function sch(){
   if(m.r!==last){last=m.r;h+=`<div class="rh">Vòng ${m.r} · ${fd(m.date)}</div>`}
   const r=R(m.id),pl=ok(m),p=S.pred[m.id];
   h+=`<div class="card"><div class="mt"><span class="tn">${logo(m.h,24)} ${e(T[m.h])}</span>${pl?`<b class="sco">${r.h} - ${r.a}</b>`:`<span class="mut">vs</span>`}<span class="tn r">${e(T[m.a])} ${logo(m.a,24)}</span></div>`;
+  if(m.ref)h+=`<div class="sm mut">Trọng tài: ${e(m.ref)}</div>`;
   if(pl&&r.ev?.length)h+=`<div class="sm mut">${r.ev.map(x=>({g:"⚽",y:"🟨",r:"🟥"}[x.t])+" "+e(x.n)+" ("+e(T[x.tm])+")").join(" · ")}</div>`;
   if(!pl&&S.uid)h+=`<div class="pr row sm" data-m="${m.id}">Dự đoán: <select data-c="pred"><option value="">—</option><option value="h" ${p?.w==="h"?"selected":""}>${e(T[m.h])} thắng</option><option value="d" ${p?.w==="d"?"selected":""}>Hòa</option><option value="a" ${p?.w==="a"?"selected":""}>${e(T[m.a])} thắng</option></select><input type="number" min="0" data-c="pred" value="${e(p?.h??"")}"> - <input type="number" min="0" data-c="pred" value="${e(p?.a??"")}"></div>`;
   if(pl&&p&&p.w){const w=r.h>r.a?"h":r.h<r.a?"a":"d";h+=`<div class="sm mut">Bạn dự đoán ${p.w===w?"đúng ✅":"chưa đúng ❌"}${p.h!==""?` (${e(p.h)}-${e(p.a)})`:""}</div>`}
   if(S.admin){
    if(S.edit===m.id){const d=S.draft,ro=Object.values(S.players).filter(x=>x.team===m.h||x.team===m.a).map(x=>`<option value="${e(x.name)}">`).join("");
-    h+=`<div class="ed"><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.map((x,i)=>`<div class="row sm">${{g:"⚽",y:"🟨",r:"🟥"}[x.t]} ${e(x.n)} (${e(T[x.tm])}) <button class="b x" data-a="dev" data-i="${i}">✕</button></div>`).join("")}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" list="ros" placeholder="Tên cầu thủ"><datalist id="ros">${ro}</datalist><button class="b s" data-a="aev">Thêm</button></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
+    h+=`<div class="ed"><div class="row"><b>Trọng tài:</b><input id="er" value="${e(d.ref??m.ref)}"></div><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.map((x,i)=>`<div class="row sm">${{g:"⚽",y:"🟨",r:"🟥"}[x.t]} ${e(x.n)} (${e(T[x.tm])}) <button class="b x" data-a="dev" data-i="${i}">✕</button></div>`).join("")}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" list="ros" placeholder="Tên cầu thủ"><datalist id="ros">${ro}</datalist><button class="b s" data-a="aev">Thêm</button></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
    else h+=`<div class="row"><button class="b s" data-a="edit" data-m="${m.id}">Nhập kết quả</button></div>`}
   h+=`</div>`});
  return h}
@@ -125,7 +126,7 @@ addEventListener("focusout",()=>setTimeout(()=>dirty&&draw(),150));
 async function load(){
  try{
   const [m,ev,pf,nw,ta,st]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*")]);
-  M=(m.data||[]).map(x=>({id:x.id,r:x.round,h:x.home,a:x.away,date:new Date(x.match_date+"T00:00:00")}));
+  M=(m.data||[]).map(x=>({id:x.id,r:x.round,h:x.home,a:x.away,date:new Date(x.match_date+"T00:00:00"),ref:x.referee||""}));
   S.res={};(m.data||[]).forEach(x=>{if(x.hg!=null&&x.ag!=null)S.res[x.id]={h:x.hg,a:x.ag,ev:[]}});
   (ev.data||[]).forEach(x=>S.res[x.match_id]?.ev.push({t:x.type,tm:x.team,n:x.player}));
   S.players={};(pf.data||[]).forEach(p=>S.players[p.id]={name:p.name,bd:p.bd,av:p.avatar,team:p.team,num:p.num,cancel:p.cancel,admin:p.is_admin});
@@ -141,7 +142,7 @@ async function load(){
 }
 const X=async p=>{const r=await p;if(r.error)throw r.error;return r};
 const W=async fn=>{try{await fn();await load()}catch(x){alert(x.message||x)}};
-const syncDraft=()=>{if(S.draft){S.draft.h=$("#eh")?.value===""?"":+$("#eh").value;S.draft.a=$("#ea")?.value===""?"":+$("#ea").value}};
+const syncDraft=()=>{if(S.draft){S.draft.h=$("#eh")?.value===""?"":+$("#eh").value;S.draft.a=$("#ea")?.value===""?"":+$("#ea").value;S.draft.ref=$("#er")?.value??S.draft.ref}};
 const shrink=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const c=document.createElement("canvas");c.width=c.height=96;const s=Math.min(i.width,i.height);c.getContext("2d").drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,96,96);res(c.toDataURL("image/jpeg",.8))};i.onerror=rej;i.src=r.result};r.readAsDataURL(f)});
 const A={
  tab:d=>{S.tab=d.t;S.open=null;draw(1)},open:d=>{S.open=+d.i;draw(1)},back:()=>{S.open=null;draw(1)},
@@ -160,7 +161,7 @@ const A={
  unedit:()=>{S.edit=null;S.draft=null;draw(1)},
  aev:()=>{syncDraft();const n=$("#en").value.trim();if(!n)return alert("Nhập tên cầu thủ.");S.draft.ev.push({t:$("#et").value,tm:+$("#etm").value,n});draw(1)},
  dev:d=>{syncDraft();S.draft.ev.splice(+d.i,1);draw(1)},
- sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");W(async()=>{await X(sb.from("matches").update({hg:d.h,ag:d.a}).eq("id",id));await X(sb.from("events").delete().eq("match_id",id));if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n}))));S.edit=null;S.draft=null})}
+ sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");W(async()=>{await X(sb.from("matches").update({hg:d.h,ag:d.a,referee:(d.ref??"").trim()||null}).eq("id",id));await X(sb.from("events").delete().eq("match_id",id));if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n}))));S.edit=null;S.draft=null})}
 };
 const C={
  rd:t=>{S.rd=t.value;draw(1)},tm:t=>{S.tm=t.value;draw(1)},
