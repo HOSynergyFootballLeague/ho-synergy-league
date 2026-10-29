@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HO Synergy League 2026</title>
+<style>
+:root{--bg:#eef1f6;--fg:#12203a;--card:#fff;--mut:#64708a;--line:#dde3ee;--hd:#12203a;--pur:#e8defa;--g:#1a7f4b}
+@media(prefers-color-scheme:dark){:root{--bg:#0c1220;--fg:#e6ebf5;--card:#161f33;--mut:#93a0ba;--line:#26324b;--hd:#0a0f1c;--pur:#3b2a66;--g:#3ecf8e}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,"Segoe UI",Roboto,sans-serif}
+.w{max-width:760px;margin:auto;padding:12px}
+.ban{background:linear-gradient(135deg,#0d1b4d,#3a1f8a);color:#fff;border-radius:16px;padding:20px 12px;text-align:center;font-weight:800;font-size:22px;letter-spacing:.5px}
+.ban small{display:block;font-weight:500;font-size:13px;opacity:.8;margin-top:4px}
+.tabs{display:flex;border-bottom:2px solid var(--line);margin:12px 0}
+.tabs button{flex:1;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 2px;font:600 15px system-ui,sans-serif;color:var(--mut);cursor:pointer}
+.tabs .on{color:var(--g);border-color:var(--g)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+h2{font-size:16px;margin:14px 0 6px}
+.sc{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--hd);color:#fff;padding:8px 6px;text-align:center;white-space:nowrap}
+td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line);background:var(--card)}
+.l{text-align:left}
+tr.lead td,tr.top td{background:var(--pur);font-weight:800}
+.lg{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700;object-fit:cover;vertical-align:middle;flex:none}
+.mut{color:var(--mut)}.sm{font-size:13px}
+.mt{display:flex;align-items:center;justify-content:space-between;gap:6px;font-weight:600}
+.tn{display:flex;align-items:center;gap:6px;flex:1}.tn.r{justify-content:flex-end;text-align:right}
+.sco{font-size:20px;padding:0 6px}
+button,select,input,textarea{font:inherit;color:inherit}
+input,select,textarea{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 8px;max-width:100%}
+input[type=number]{width:56px}
+textarea{width:100%;box-sizing:border-box}
+.b{background:var(--g);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.b.s{background:none;color:var(--g);border:1px solid var(--g)}
+.b.x{background:#c0392b}
+.ed{border-top:1px dashed var(--line);margin-top:8px;padding-top:8px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tc{text-align:center;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 6px;font-weight:700}
+.rh{background:var(--hd);color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;margin-top:14px}
+.note{background:var(--pur);border-radius:10px;padding:8px 10px;font-size:13px}
+</style></head><body>
+<div class="w">
+<div class="ban">⚽ HO SYNERGY LEAGUE 2026<small>Đá vòng tròn một lượt: 5 vòng, mỗi vòng 3 trận</small></div>
+<div class="tabs"><button data-a="tab" data-t="home">Trang chủ</button><button data-a="tab" data-t="sch">Lịch đấu</button><button data-a="tab" data-t="teams">Đội bóng</button><button data-a="tab" data-t="me">Cầu thủ</button></div>
+<div id="app"><div class="mut">Đang tải…</div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+const sb=supabase.createClient(CFG.url,CFG.key);
+const T=["Mượt mà","Hài vãi","Phòng kính","VPS United","Platform","Lá chắn"];
+const COL=["#2563eb","#0f172a","#dc2626","#d97706","#7c3aed","#334155"];
+let M=[];
+const S={tab:"home",rd:"all",tm:"",open:null,edit:null,draft:null,res:{},players:{},news:{},tav:{},cfg:{},pred:{},uid:null,admin:false,loaded:false};
+const $=s=>document.querySelector(s);
+const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
+const R=id=>S.res[id]||null;
+const img=u=>typeof u==="string"&&u.startsWith("data:image/");
+const logo=(i,z=28)=>img(S.tav[i]?.img)?`<img class="lg" style="width:${z}px;height:${z}px" src="${S.tav[i].img}">`:`<span class="lg" style="width:${z}px;height:${z}px;background:${COL[i]};font-size:${z*.4}px">${e(T[i].split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase())}</span>`;
+const pav=(p,z=28)=>img(p.av)?`<img class="lg" style="width:${z}px;height:${z}px" src="${p.av}">`:`<span class="lg" style="width:${z}px;height:${z}px;background:#94a3b8;font-size:${z*.4}px">${e((p.name||"?")[0])}</span>`;
+const ok=m=>{const r=R(m.id);return r&&typeof r.h==="number"&&typeof r.a==="number"};
+
+function table(){const t=T.map((n,i)=>({i,p:0,w:0,d:0,l:0,gf:0,ga:0}));M.forEach(m=>{if(!ok(m))return;const r=R(m.id),H=t[m.h],A=t[m.a];H.p++;A.p++;H.gf+=r.h;H.ga+=r.a;A.gf+=r.a;A.ga+=r.h;if(r.h>r.a){H.w++;A.l++}else if(r.h<r.a){A.w++;H.l++}else{H.d++;A.d++}});t.forEach(x=>{x.gd=x.gf-x.ga;x.pt=x.w*3+x.d});return t.sort((a,b)=>b.pt-a.pt||b.gd-a.gd||b.gf-a.gf)}
+function evs(){const sc={},cd={};M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{const k=x.n+"|"+x.tm;if(x.t==="g"){sc[k]=sc[k]||{n:x.n,tm:x.tm,c:0};sc[k].c++}else{cd[k]=cd[k]||{n:x.n,tm:x.tm,y:0,r:0};x.t==="y"?cd[k].y++:cd[k].r++}}));return{sc:Object.values(sc).sort((a,b)=>b.c-a.c),cd:Object.values(cd).sort((a,b)=>b.r-a.r||b.y-a.y)}}
+
+function home(){
+ const ns=Object.entries(S.news).sort((a,b)=>b[1].ts-a[1].ts);
+ let h=`<div class="card"><b>📢 Thông báo</b>`+(ns.length?ns.map(([k,n])=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line)"><div style="flex:1"><span class="mut sm">${fd(new Date(n.ts))}</span><br>${e(n.t).replace(/\n/g,"<br>")}</div>${S.admin?`<button class="b x" data-a="delnews" data-k="${e(k)}">✕</button>`:""}</div>`).join(""):`<div class="mut sm">Chưa có thông báo.</div>`);
+ if(S.admin)h+=`<div class="ed"><textarea id="nt" rows="2" placeholder="Nội dung thông báo (admin)"></textarea><button class="b" data-a="addnews">Đăng thông báo</button></div>`;
+ h+=`</div><h2>Bảng xếp hạng</h2><div class="sc"><table><tr><th>#</th><th class="l">Đội</th><th>Trận</th><th>T</th><th>H</th><th>B</th><th>BT</th><th>BB</th><th>HS</th><th>Điểm</th></tr>`;
+ table().forEach((x,k)=>h+=`<tr class="${k?"":"lead"}"><td>${k+1}</td><td class="l">${logo(x.i,24)} ${e(T[x.i])}</td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd>0?"+":""}${x.gd}</td><td><b>${x.pt}</b></td></tr>`);
+ h+=`</table></div><div class="mut sm">Thắng +3, hòa +1, thua 0. Xếp theo điểm, hiệu số, số bàn thắng. T: thắng, H: hòa, B: bại, BT/BB: bàn thắng/bàn bại, HS: hiệu số.</div>`;
+ const v=evs(),mx=v.sc[0]?.c;
+ h+=`<h2>⚽ Vua phá lưới</h2>`+(v.sc.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th class="l">Đội</th><th>Bàn</th></tr>${v.sc.map((x,k)=>`<tr class="${x.c===mx?"top":""}"><td>${k+1}</td><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.c}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có dữ liệu.</div>`);
+ h+=`<h2>Thẻ phạt</h2>`+(v.cd.length?`<div class="sc"><table><tr><th class="l">Cầu thủ</th><th class="l">Đội</th><th>🟨</th><th>🟥</th></tr>${v.cd.map(x=>`<tr><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.y}</td><td>${x.r}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có thẻ phạt.</div>`);
+ return h}
+
+function sch(){
+ let h=`<div class="row"><select data-c="rd"><option value="all">Tất cả các vòng</option>${[1,2,3,4,5].map(r=>`<option value="${r}" ${S.rd==r?"selected":""}>Vòng ${r}</option>`).join("")}</select><select data-c="tm"><option value="">Tất cả đội</option>${T.map((n,i)=>`<option value="${i}" ${S.tm===String(i)?"selected":""}>${e(n)}</option>`).join("")}</select></div>`;
+ if(!S.uid)h+=`<div class="note">Đăng nhập (tab Cầu thủ) để dự đoán kết quả.</div>`;
+ let last=0;
+ M.filter(m=>(S.rd==="all"||m.r==S.rd)&&(S.tm===""||m.h==S.tm||m.a==S.tm)).forEach(m=>{
+  if(m.r!==last){last=m.r;h+=`<div class="rh">Vòng ${m.r} · ${fd(m.date)}</div>`}
+  const r=R(m.id),pl=ok(m),p=S.pred[m.id];
+  h+=`<div class="card"><div class="mt"><span class="tn">${logo(m.h,24)} ${e(T[m.h])}</span>${pl?`<b class="sco">${r.h} - ${r.a}</b>`:`<span class="mut">vs</span>`}<span class="tn r">${e(T[m.a])} ${logo(m.a,24)}</span></div>`;
+  if(pl&&r.ev?.length)h+=`<div class="sm mut">${r.ev.map(x=>({g:"⚽",y:"🟨",r:"🟥"}[x.t])+" "+e(x.n)+" ("+e(T[x.tm])+")").join(" · ")}</div>`;
+  if(!pl&&S.uid)h+=`<div class="pr row sm" data-m="${m.id}">Dự đoán: <select data-c="pred"><option value="">—</option><option value="h" ${p?.w==="h"?"selected":""}>${e(T[m.h])} thắng</option><option value="d" ${p?.w==="d"?"selected":""}>Hòa</option><option value="a" ${p?.w==="a"?"selected":""}>${e(T[m.a])} thắng</option></select><input type="number" min="0" data-c="pred" value="${e(p?.h??"")}"> - <input type="number" min="0" data-c="pred" value="${e(p?.a??"")}"></div>`;
+  if(pl&&p&&p.w){const w=r.h>r.a?"h":r.h<r.a?"a":"d";h+=`<div class="sm mut">Bạn dự đoán ${p.w===w?"đúng ✅":"chưa đúng ❌"}${p.h!==""?` (${e(p.h)}-${e(p.a)})`:""}</div>`}
+  if(S.admin){
+   if(S.edit===m.id){const d=S.draft,ro=Object.values(S.players).filter(x=>x.team===m.h||x.team===m.a).map(x=>`<option value="${e(x.name)}">`).join("");
+    h+=`<div class="ed"><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.map((x,i)=>`<div class="row sm">${{g:"⚽",y:"🟨",r:"🟥"}[x.t]} ${e(x.n)} (${e(T[x.tm])}) <button class="b x" data-a="dev" data-i="${i}">✕</button></div>`).join("")}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" list="ros" placeholder="Tên cầu thủ"><datalist id="ros">${ro}</datalist><button class="b s" data-a="aev">Thêm</button></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
+   else h+=`<div class="row"><button class="b s" data-a="edit" data-m="${m.id}">Nhập kết quả</button></div>`}
+  h+=`</div>`});
+ return h}
+
+function teams(){
+ const P=Object.entries(S.players),mine=S.players[S.uid];
+ if(S.open===null){
+  const pend=P.filter(([k,p])=>p.cancel&&p.team!=null);
+  let h=S.admin&&pend.length?`<div class="note">⏳ ${pend.length} yêu cầu hủy đăng ký chờ duyệt (mở đội để xác nhận).</div>`:"";
+  return h+`<div class="grid">${T.map((n,i)=>`<div class="tc" data-a="open" data-i="${i}">${logo(i,56)}<div>${e(n)}</div><div class="mut sm">${P.filter(([k,p])=>p.team===i).length} cầu thủ</div></div>`).join("")}</div>`}
+ const i=S.open,ro=P.filter(([k,p])=>p.team===i).sort((a,b)=>a[1].num-b[1].num);
+ let h=`<button class="b s" data-a="back">← Danh sách đội</button><div class="card" style="text-align:center">${logo(i,64)}<h2>${e(T[i])}</h2>${S.admin?`<label class="b s sm">Đổi avatar đội<input type="file" accept="image/*" data-c="tav" data-i="${i}" hidden></label>`:""}</div><div class="sc"><table><tr><th>Số áo</th><th class="l">Cầu thủ</th>${S.admin?"<th></th>":""}</tr>${ro.map(([k,p])=>`<tr><td><b>${e(p.num)}</b></td><td class="l">${pav(p,24)} ${e(p.name)}${p.cancel?` <span class="mut sm">⏳ xin hủy</span>`:""}</td>${S.admin?`<td>${p.cancel?`<button class="b x" data-a="approve" data-p="${e(k)}">Duyệt hủy</button>`:""}</td>`:""}</tr>`).join("")||`<tr><td colspan="3" class="mut">Chưa có cầu thủ đăng ký.</td></tr>`}</table></div>`;
+ if(!S.uid)return h+`<div class="note">Đăng nhập (tab Cầu thủ) để đăng ký vào đội.</div>`;
+ if(mine?.team===i)h+=mine.cancel?`<div class="note">Đã gửi yêu cầu hủy đăng ký, chờ admin xác nhận.</div>`:`<button class="b x" data-a="cancel">Yêu cầu hủy đăng ký</button>`;
+ else if(mine?.team!=null)h+=`<div class="note">Bạn đã đăng ký đội ${e(T[mine.team])}. Cần hủy đăng ký (admin xác nhận) trước khi sang đội khác.</div>`;
+ else h+=`<div class="card"><b>Đăng ký vào ${e(T[i])}</b><div class="row"><input id="rn" placeholder="Tên cầu thủ" value="${e(mine?.name||"")}"><input id="rk" type="number" min="0" max="99" placeholder="Số áo"><button class="b" data-a="reg">Đăng ký</button></div></div>`;
+ return h}
+
+function me(){
+ if(!S.uid)return `<div class="card"><b>Đăng nhập / Đăng ký</b><div class="row"><input id="ae" type="email" placeholder="Email"><input id="ap" type="password" placeholder="Mật khẩu (từ 6 ký tự)"></div><div class="row"><input id="an" placeholder="Tên hiển thị (khi đăng ký)"></div><div class="row"><button class="b" data-a="login">Đăng nhập</button><button class="b s" data-a="signup">Đăng ký tài khoản</button></div></div>`;
+ const p=S.players[S.uid]||{};
+ return `<div class="card" style="text-align:center">${pav(p,80)}<div><label class="b s sm" style="margin-top:8px">Đổi avatar<input type="file" accept="image/*" data-c="av" hidden></label></div></div>
+ <div class="card"><div class="row"><label>Tên<br><input id="pn" value="${e(p.name||"")}"></label><label>Ngày sinh<br><input id="pb" type="date" value="${e(p.bd||"")}"></label></div>
+ <div class="sm mut">Đội: ${p.team!=null?e(T[p.team])+" · số áo "+e(p.num):"chưa đăng ký"}${p.cancel?" (đang chờ hủy)":""}${S.admin?" · Admin":""}</div><div class="row"><button class="b" data-a="savep">Lưu hồ sơ</button></div></div>
+ <div class="card"><b>Đổi mật khẩu</b><div class="row"><input id="np" type="password" placeholder="Mật khẩu mới"><button class="b s" data-a="chpw">Đổi</button></div></div>
+ <div class="card"><b>Bot Zalo của nhóm</b><div class="row">${S.cfg.main?.zalo?`<a class="b" href="${e(S.cfg.main.zalo)}" target="_blank" rel="noopener">Kết nối bot Zalo</a>`:`<span class="mut sm">Admin chưa cài link bot Zalo.</span>`}</div>${S.admin?`<div class="row"><input id="zl" placeholder="Link bot/nhóm Zalo" value="${e(S.cfg.main?.zalo||"")}"><button class="b s" data-a="zalo">Lưu link</button></div>`:""}</div>
+ <button class="b x" data-a="logout">Đăng xuất</button>`}
+
+let dirty=false;
+function draw(f){const a=document.activeElement;if(!f&&a&&a.closest("#app")&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)){dirty=true;return}dirty=false;$("#app").innerHTML=S.loaded?({home,sch,teams,me})[S.tab]():`<div class="mut">Đang tải…</div>`;document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===S.tab))}
+addEventListener("focusout",()=>setTimeout(()=>dirty&&draw(),150));
+
+async function load(){
+ try{
+  const [m,ev,pf,nw,ta,st]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*")]);
+  M=(m.data||[]).map(x=>({id:x.id,r:x.round,h:x.home,a:x.away,date:new Date(x.match_date+"T00:00:00")}));
+  S.res={};(m.data||[]).forEach(x=>{if(x.hg!=null&&x.ag!=null)S.res[x.id]={h:x.hg,a:x.ag,ev:[]}});
+  (ev.data||[]).forEach(x=>S.res[x.match_id]?.ev.push({t:x.type,tm:x.team,n:x.player}));
+  S.players={};(pf.data||[]).forEach(p=>S.players[p.id]={name:p.name,bd:p.bd,av:p.avatar,team:p.team,num:p.num,cancel:p.cancel,admin:p.is_admin});
+  S.news={};(nw.data||[]).forEach(n=>S.news[n.id]={t:n.content,ts:Date.parse(n.created_at)});
+  S.tav={};(ta.data||[]).forEach(x=>S.tav[x.team]={img:x.img});
+  S.cfg={main:{zalo:(st.data||[]).find(x=>x.key==="zalo")?.value||""}};
+  S.admin=!!S.players[S.uid]?.admin;
+  S.pred={};
+  if(S.uid){const pr=await sb.from("predictions").select("*").eq("user_id",S.uid);(pr.data||[]).forEach(x=>S.pred[x.match_id]={w:x.winner||"",h:x.pred_home??"",a:x.pred_away??""})}
+  S.loaded=true;
+ }catch(x){console.error(x)}
+ draw();
+}
+const X=async p=>{const r=await p;if(r.error)throw r.error;return r};
+const W=async fn=>{try{await fn();await load()}catch(x){alert(x.message||x)}};
+const syncDraft=()=>{if(S.draft){S.draft.h=$("#eh")?.value===""?"":+$("#eh").value;S.draft.a=$("#ea")?.value===""?"":+$("#ea").value}};
+const shrink=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const c=document.createElement("canvas");c.width=c.height=96;const s=Math.min(i.width,i.height);c.getContext("2d").drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,96,96);res(c.toDataURL("image/jpeg",.8))};i.onerror=rej;i.src=r.result};r.readAsDataURL(f)});
+const A={
+ tab:d=>{S.tab=d.t;S.open=null;draw(1)},open:d=>{S.open=+d.i;draw(1)},back:()=>{S.open=null;draw(1)},
+ login:()=>W(()=>X(sb.auth.signInWithPassword({email:$("#ae").value.trim(),password:$("#ap").value}))),
+ signup:()=>W(async()=>{const r=await X(sb.auth.signUp({email:$("#ae").value.trim(),password:$("#ap").value,options:{data:{name:$("#an").value.trim()}}}));if(!r.data.session)alert("Đã đăng ký. Kiểm tra email để xác nhận rồi đăng nhập.")}),
+ logout:()=>W(()=>X(sb.auth.signOut())),
+ chpw:()=>{const p=$("#np").value;if(p.length<6)return alert("Mật khẩu tối thiểu 6 ký tự.");W(async()=>{await X(sb.auth.updateUser({password:p}));alert("Đã đổi mật khẩu.")})},
+ reg:()=>{const n=$("#rn").value.trim(),k=parseInt($("#rk").value);if(!n||!(k>=0&&k<=99))return alert("Nhập tên và số áo (0–99).");W(()=>X(sb.rpc("register_team",{t:S.open,n:k,p_name:n})))},
+ cancel:()=>W(()=>X(sb.rpc("request_cancel"))),
+ approve:d=>W(()=>X(sb.rpc("approve_cancel",{uid:d.p}))),
+ savep:()=>W(async()=>{await X(sb.from("profiles").update({name:$("#pn").value.trim()||"Cầu thủ",bd:$("#pb").value||null}).eq("id",S.uid));alert("Đã lưu hồ sơ.")}),
+ addnews:()=>{const t=$("#nt").value.trim();if(t)W(()=>X(sb.from("news").insert({content:t})))},
+ delnews:d=>W(()=>X(sb.from("news").delete().eq("id",d.k))),
+ zalo:()=>W(()=>X(sb.from("settings").upsert({key:"zalo",value:$("#zl").value.trim()}))),
+ edit:d=>{const r=R(d.m);S.edit=d.m;S.draft=r?JSON.parse(JSON.stringify(r)):{h:"",a:"",ev:[]};draw(1)},
+ unedit:()=>{S.edit=null;S.draft=null;draw(1)},
+ aev:()=>{syncDraft();const n=$("#en").value.trim();if(!n)return alert("Nhập tên cầu thủ.");S.draft.ev.push({t:$("#et").value,tm:+$("#etm").value,n});draw(1)},
+ dev:d=>{syncDraft();S.draft.ev.splice(+d.i,1);draw(1)},
+ sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");W(async()=>{await X(sb.from("matches").update({hg:d.h,ag:d.a}).eq("id",id));await X(sb.from("events").delete().eq("match_id",id));if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n}))));S.edit=null;S.draft=null})}
+};
+const C={
+ rd:t=>{S.rd=t.value;draw(1)},tm:t=>{S.tm=t.value;draw(1)},
+ pred:t=>{const r=t.closest(".pr"),m=r.dataset.m,[w,h,a]=r.querySelectorAll("select,input");
+  if(!w.value&&h.value===""&&a.value==="")return W(()=>X(sb.from("predictions").delete().eq("user_id",S.uid).eq("match_id",m)));
+  W(()=>X(sb.from("predictions").upsert({user_id:S.uid,match_id:m,winner:w.value||null,pred_home:h.value===""?null:+h.value,pred_away:a.value===""?null:+a.value})))},
+ av:async t=>{if(t.files[0])W(async()=>X(sb.from("profiles").update({avatar:await shrink(t.files[0])}).eq("id",S.uid)))},
+ tav:async t=>{if(t.files[0])W(async()=>X(sb.from("team_avatars").upsert({team:+t.dataset.i,img:await shrink(t.files[0])})))}
+};
+document.addEventListener("click",ev=>{const b=ev.target.closest("[data-a]");if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
+document.addEventListener("change",ev=>{const t=ev.target,k=t.dataset.c;if(k&&C[k])C[k](t)});
+
+sb.auth.onAuthStateChange((_,s)=>{const id=s?.user?.id||null;if(id!==S.uid||!S.loaded){S.uid=id;load()}});
+sb.auth.getSession().then(({data})=>{S.uid=data.session?.user?.id||null;load()});
+setInterval(()=>{if(!document.hidden)load()},30000);
+</script></body></html>
