@@ -56,14 +56,16 @@ function recap(day, yest, all, events) {
   if (wins.length) s += `\n\n🎉 Chúc mừng ${wins.join(", ")} giành chiến thắng!`;
   if (draws.length) s += `\n🤝 ${draws.join("; ")} chia điểm.`;
   const ev = events.filter(x => ids.has(x.match_id));
-  const goals = {}, cards = {};
+  const goals = {}, cards = {}, owng = [];
   ev.forEach(x => {
     const k = `${x.player} (${T[x.team]})`;
     if (x.type === "g") goals[k] = (goals[k] || 0) + 1;
-    else { cards[k] = cards[k] || { y: 0, r: 0 }; cards[k][x.type]++; }
+    else if (x.type === "og") owng.push(k);
+    else if (x.type === "y" || x.type === "r") { cards[k] = cards[k] || { y: 0, r: 0 }; cards[k][x.type]++; }
   });
   const g = Object.entries(goals);
   if (g.length) s += `\n\n🥅 Cầu thủ ghi bàn: ` + g.map(([k, c]) => k + (c > 1 ? ` x${c}` : "")).join(", ") + ". Chúc mừng các cầu thủ! 👏";
+  if (owng.length) s += `\n🙈 Phản lưới: ` + owng.join(", ") + ".";
   const c = Object.entries(cards);
   if (c.length) s += `\n🟨🟥 Thẻ phạt: ` + c.map(([k, v]) => k + " " + (v.y ? "🟨".repeat(v.y) : "") + (v.r ? "🟥".repeat(v.r) : "")).join(", ");
   return s + "\n\n" + rankText(all) + "\n\n" + link;
