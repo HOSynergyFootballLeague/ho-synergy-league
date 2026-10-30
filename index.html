@@ -103,7 +103,7 @@ function sch(){
   if(pl&&r.ev?.length)h+=evCols(r,m,false);
   if(!pl){
    const att=(S.att[m.id]||[]).filter(u=>S.players[u]).map(u=>({id:u,...S.players[u]}));
-   const lst=tm=>{const a=att.filter(x=>x.team===tm);return `<div><b class="sm">${e(T[tm])} (${a.length})</b>${a.map(x=>`<div class="sm"><a href="#p-${e(x.id)}" style="color:inherit">${e(x.name)}</a></div>`).join("")}</div>`};
+   const lst=tm=>{const a=att.filter(x=>x.team===tm);return `<div><b class="sm">${e(T[tm])} (${a.length})${a.length<7?" ⚠️":""}</b>${S.admin||mine?.team===tm?a.map(x=>`<div class="sm"><a href="#p-${e(x.id)}" style="color:inherit">${e(x.name)}</a></div>`).join(""):""}</div>`};
    h+=`<div class="sm" style="margin-top:8px"><b>📝 Đăng ký tham gia</b></div><div class="cols">${lst(m.h)}${lst(m.a)}</div>`;
    if(S.uid&&mine&&(mine.team===m.h||mine.team===m.a))h+=`<div class="row">${(S.att[m.id]||[]).includes(S.uid)?`<button class="b x" data-a="unattend" data-m="${m.id}">Hủy đăng ký tham gia</button>`:`<button class="b" data-a="attend" data-m="${m.id}">✅ Đăng ký tham gia</button>`}</div>`;
   }
