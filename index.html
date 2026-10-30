@@ -56,7 +56,7 @@ const T=["Mượt mà","Hài vãi","Phòng kính","VPS United","Platform","Lá c
 const COL=["#2563eb","#0f172a","#dc2626","#d97706","#7c3aed","#334155"];
 let M=[];
 const POS=["GK","LB","CB","RB","MF","CF"],PN={GK:"Thủ môn",LB:"Hậu vệ trái",CB:"Trung vệ",RB:"Hậu vệ phải",MF:"Tiền vệ",CF:"Tiền đạo cắm"};
-const S={att:{},pv:null,tab:"home",rd:"all",tm:"",open:null,edit:null,draft:null,res:{},players:{},news:{},tav:{},cfg:{},pred:{},uid:null,admin:false,loaded:false};
+const S={fp:[],zl:false,zcode:null,att:{},pv:null,tab:"home",rd:"all",tm:"",open:null,edit:null,draft:null,res:{},players:{},news:{},tav:{},cfg:{},pred:{},uid:null,admin:false,loaded:false};
 const $=s=>document.querySelector(s);
 const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
@@ -85,9 +85,16 @@ function home(){
  h+=`<h2>⚽ Vua phá lưới</h2>`+(v.sc.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th class="l">Đội</th><th>Bàn</th></tr>${v.sc.map((x,k)=>`<tr class="${x.c===mx?"top":""}"><td>${k+1}</td><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.c}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có dữ liệu.</div>`);
  h+=`<h2>Thẻ phạt</h2>`+(v.cd.length?`<div class="sc"><table><tr><th class="l">Cầu thủ</th><th class="l">Đội</th><th>🟨</th><th>🟥</th></tr>${v.cd.map(x=>`<tr><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.y}</td><td>${x.r}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có thẻ phạt.</div>`);
  h+=valBoard();
+ h+=predBoard();
  return h}
 
 const fv=n=>n.toFixed(1).replace(".",",");
+const PR_RIGHT=1,PR_EXACT=3;
+function pscore(p){const r=R(p.match_id);if(!r||typeof r.h!=="number")return 0;const out=r.h>r.a?"h":r.h<r.a?"a":"d",has=p.pred_home!=null&&p.pred_away!=null,w=p.winner||(has?(p.pred_home>p.pred_away?"h":p.pred_home<p.pred_away?"a":"d"):null);if(has&&p.pred_home===r.h&&p.pred_away===r.a)return PR_EXACT;return w===out?PR_RIGHT:0}
+const pbeer=uid=>S.fp.filter(p=>p.user_id===uid).reduce((a,p)=>a+pscore(p),0);
+function predBoard(){const m={};S.fp.forEach(p=>{const x=m[p.user_id]=m[p.user_id]||{n:p.name,b:0,c:0,t:0};x.t++;const s=pscore(p);if(s){x.b+=s;x.c++}});
+ const L=Object.entries(m).sort((a,b)=>b[1].b-a[1].b||b[1].c-a[1].c).slice(0,10);
+ return `<h2>🔮 Thưởng dự đoán</h2>`+(L.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th>Đúng</th><th>🍺</th></tr>${L.map(([k,x],i)=>`<tr><td>${i+1}</td><td class="l"><a href="#p-${e(k)}" style="color:inherit;font-weight:600">${e(S.players[k]?.name||x.n)}</a></td><td>${x.c}/${x.t}</td><td>${fv(x.b)}</td></tr>`).join("")}</table></div><div class="mut sm">Dự đoán đúng kết quả +${PR_RIGHT}🍺, đúng tỷ số +${PR_EXACT}🍺. Thưởng này không cộng vào giá trị chuyển nhượng.</div>`:`<div class="mut sm">Chưa có kết quả dự đoán.</div>`)}
 function val(uid){const p=S.players[uid];let b=5,l=5;if(!p)return{b,l};
  const mine=x=>x.pid?x.pid===uid:(p.team!=null&&x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase());
  M.forEach(m=>{if(!ok(m))return;const r=R(m.id),ev=(r.ev||[]).filter(mine);
@@ -138,7 +145,7 @@ function sch(){
 function pplay(){const p=S.players[S.pv],bk=`<button class="b s" data-a="backp">← Quay lại</button>`;
  if(!p)return bk+`<div class="note" style="margin-top:10px">Không tìm thấy cầu thủ.</div>`;
  let g=0,y=0,rd=0;M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{if(x.pid?x.pid===S.pv:(x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase())){x.t==="g"?g++:x.t==="y"?y++:x.t==="r"?rd++:0}}));
- return bk+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table><tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Giá trị</td><td class="l"><b>${vt(S.pv)}</b></td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
+ return bk+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table><tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Giá trị</td><td class="l"><b>${vt(S.pv)}</b></td></tr><tr><td class="l mut">Thưởng dự đoán</td><td class="l"><b>${fv(pbeer(S.pv))}🍺</b> <span class="mut sm">(không tính vào giá trị)</span></td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
 function teams(){
  const P=Object.entries(S.players),mine=S.players[S.uid];
  if(S.open===null){
@@ -154,7 +161,7 @@ function teams(){
  return h}
 
 function zaloBtn(){const z=S.cfg.main?.zalo||"",ok=/^https?:\/\//.test(z);
- return `<div class="card" style="text-align:center">${ok?`<a class="b" href="${e(z)}" target="_blank" rel="noopener">💬 Liên kết bot Zalo</a>`:`<button class="b" data-a="nozalo">💬 Liên kết bot Zalo</button>`}<div class="sm mut" style="margin-top:6px">Nhận nhắc lịch thi đấu và kết quả qua Zalo.</div>${S.admin?`<div class="row" style="justify-content:center"><input id="zl" placeholder="Link bot/nhóm Zalo (admin)" value="${e(z)}"><button class="b s" data-a="zalo">Lưu link</button></div>`:""}</div>`}
+ return `<div class="card" style="text-align:center">${ok?`<a class="b" href="${e(z)}" target="_blank" rel="noopener">💬 Liên kết bot Zalo</a>`:`<button class="b" data-a="nozalo">💬 Liên kết bot Zalo</button>`}<div class="sm mut" style="margin-top:6px">Nhận nhắc lịch thi đấu và kết quả qua Zalo.</div>${S.uid?(S.zl?`<div class="sm" style="margin-top:8px">✅ Đã liên kết Zalo: bot sẽ nhắn riêng dự đoán của bạn. <button class="b s" data-a="unlinkz">Hủy liên kết</button></div>`:S.zcode?`<div class="note" style="margin-top:8px">Mở bot Zalo, nhắn riêng đúng nội dung: <b>LINK ${e(S.zcode)}</b><br>Mã có hiệu lực 15 phút. Bot trả lời xác nhận rồi bạn tải lại trang.</div>`:`<div style="margin-top:8px"><button class="b s" data-a="zcode">Lấy mã liên kết Zalo (nhận tin dự đoán riêng)</button></div>`):""}${S.admin?`<div class="row" style="justify-content:center"><input id="zl" placeholder="Link bot/nhóm Zalo (admin)" value="${e(z)}"><button class="b s" data-a="zalo">Lưu link</button></div>`:""}</div>`}
 function me(){
  if(!S.uid)return zaloBtn()+`<div class="card"><b>Đăng nhập / Đăng ký</b><div class="row"><input id="ae" type="email" placeholder="Email"><input id="ap" type="password" placeholder="Mật khẩu (từ 6 ký tự)"></div><div class="row"><input id="an" placeholder="Tên hiển thị (khi đăng ký)"></div><div class="row"><button class="b" data-a="login">Đăng nhập</button><button class="b s" data-a="signup">Đăng ký tài khoản</button></div></div>`;
  const p=S.players[S.uid]||{};
@@ -170,7 +177,7 @@ addEventListener("focusout",()=>setTimeout(()=>dirty&&draw(),150));
 
 async function load(){
  try{
-  const [m,ev,pf,nw,ta,st,at]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*"),sb.from("attendance").select("*")]);
+  const [m,ev,pf,nw,ta,st,at,fp]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*"),sb.from("attendance").select("*"),sb.rpc("finished_predictions")]);
   M=(m.data||[]).map(x=>({id:x.id,r:x.round,h:x.home,a:x.away,date:new Date(x.match_date+"T00:00:00"),ref:x.referee||""}));
   S.res={};(m.data||[]).forEach(x=>{if(x.hg!=null&&x.ag!=null)S.res[x.id]={h:x.hg,a:x.ag,ev:[]}});
   (ev.data||[]).forEach(x=>S.res[x.match_id]?.ev.push({t:x.type,tm:x.team,n:x.player,pid:x.player_id}));
@@ -179,9 +186,11 @@ async function load(){
   S.tav={};(ta.data||[]).forEach(x=>S.tav[x.team]={img:x.img});
   S.cfg={main:{zalo:(st.data||[]).find(x=>x.key==="zalo")?.value||"",closed:(st.data||[]).find(x=>x.key==="pred_closed")?.value==="1"}};
   S.admin=!!S.players[S.uid]?.admin;
+  S.fp=fp.data||[];
   S.att={};(at.data||[]).forEach(x=>(S.att[x.match_id]||=[]).push(x.user_id));
   S.pred={};
   if(S.uid){const pr=await sb.from("predictions").select("*").eq("user_id",S.uid);(pr.data||[]).forEach(x=>S.pred[x.match_id]={w:x.winner||"",h:x.pred_home??"",a:x.pred_away??""})}
+  S.zl=false;if(S.uid){const zl=await sb.from("zalo_links").select("user_id").eq("user_id",S.uid);S.zl=!!(zl.data&&zl.data.length);if(S.zl)S.zcode=null}
   S.loaded=true;
  }catch(x){console.error(x)}
  draw();
@@ -194,6 +203,8 @@ function pend(){const ep=$("#ep");if(!ep)return null;const t=$("#et").value;if(e
 const A={
  backp:()=>{location.hash=""},
  rmatt:d=>{if(confirm("Gỡ cầu thủ này khỏi danh sách tham gia?"))W(()=>X(sb.from("attendance").delete().eq("user_id",d.u).eq("match_id",d.m)))},
+ zcode:()=>W(async()=>{const r=await X(sb.rpc("create_zalo_code"));S.zcode=r.data}),
+ unlinkz:()=>{if(confirm("Hủy liên kết Zalo?"))W(async()=>{await X(sb.from("zalo_links").delete().eq("user_id",S.uid));S.zl=false})},
  attend:d=>W(()=>X(sb.from("attendance").insert({user_id:S.uid,match_id:d.m}))),
  unattend:d=>W(()=>X(sb.from("attendance").delete().eq("user_id",S.uid).eq("match_id",d.m))),
  savepred:d=>{const r=document.querySelector(`.pr[data-m="${d.m}"]`),[w,h,a]=r.querySelectorAll("select,input");
