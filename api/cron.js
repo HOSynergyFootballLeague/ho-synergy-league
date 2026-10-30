@@ -17,8 +17,10 @@ const zalo = async (method, body) => {
   return r.json();
 };
 
+let EV = [];
 function standings(ms) {
-  const t = T.map((n, i) => ({ i, p: 0, w: 0, d: 0, gf: 0, ga: 0 }));
+  const t = T.map((n, i) => ({ i, p: 0, w: 0, d: 0, gf: 0, ga: 0, cd: 0 }));
+  EV.forEach(x => { if (x.type === "y") t[x.team].cd += 1; else if (x.type === "r") t[x.team].cd += 3; });
   ms.forEach(m => {
     if (m.hg == null || m.ag == null) return;
     const H = t[m.home], A = t[m.away];
@@ -26,7 +28,12 @@ function standings(ms) {
     if (m.hg > m.ag) H.w++; else if (m.hg < m.ag) A.w++; else { H.d++; A.d++; }
   });
   t.forEach(x => { x.gd = x.gf - x.ga; x.pt = x.w * 3 + x.d; });
-  return t.sort((a, b) => b.pt - a.pt || b.gd - a.gd || b.gf - a.gf);
+  const h2 = (i, j) => {
+    const m = ms.find(m => m.hg != null && m.ag != null && ((m.home === i && m.away === j) || (m.home === j && m.away === i)));
+    if (!m) return 0; const d = m.hg - m.ag; if (!d) return 0;
+    return (m.home === i) === (d > 0) ? -1 : 1;
+  };
+  return t.sort((a, b) => b.pt - a.pt || b.gd - a.gd || h2(a.i, b.i) || a.cd - b.cd || b.gf - a.gf);
 }
 const rankText = ms => "🏆 Bảng xếp hạng:\n" + standings(ms).map((x, k) =>
   `${k + 1}. ${T[x.i]}: ${x.pt} điểm (${x.p} trận, HS ${x.gd > 0 ? "+" : ""}${x.gd})`).join("\n");
@@ -74,6 +81,7 @@ module.exports = async (req, res) => {
     const today = q.date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
     const yest = new Date(Date.parse(today + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
     const [all, events] = await Promise.all([sbGet("matches", "&order=round,id"), sbGet("events")]);
+    EV = events;
     const msgs = [];
     const todays = all.filter(m => m.match_date === today);
     const ydone = all.filter(m => m.match_date === yest && m.hg != null && m.ag != null);
