@@ -55,7 +55,7 @@ const sb=supabase.createClient(CFG.url,CFG.key);
 const T=["Mượt mà","Hài vãi","Phòng kính","VPS United","Platform","Lá chắn"];
 const COL=["#2563eb","#0f172a","#dc2626","#d97706","#7c3aed","#334155"];
 let M=[];
-const POS=["LB","CB","RB","MF","CF"],PN={LB:"Hậu vệ trái",CB:"Trung vệ",RB:"Hậu vệ phải",MF:"Tiền vệ",CF:"Tiền đạo cắm"};
+const POS=["GK","LB","CB","RB","MF","CF"],PN={GK:"Thủ môn",LB:"Hậu vệ trái",CB:"Trung vệ",RB:"Hậu vệ phải",MF:"Tiền vệ",CF:"Tiền đạo cắm"};
 const S={att:{},pv:null,tab:"home",rd:"all",tm:"",open:null,edit:null,draft:null,res:{},players:{},news:{},tav:{},cfg:{},pred:{},uid:null,admin:false,loaded:false};
 const $=s=>document.querySelector(s);
 const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -72,7 +72,7 @@ function table(){const t=T.map((n,i)=>({i,p:0,w:0,d:0,l:0,gf:0,ga:0,cd:0}));
  t.forEach(x=>{x.gd=x.gf-x.ga;x.pt=x.w*3+x.d});
  const h2=(i,j)=>{const m=M.find(m=>ok(m)&&((m.h===i&&m.a===j)||(m.h===j&&m.a===i)));if(!m)return 0;const r=R(m.id),d=r.h-r.a;if(!d)return 0;return (m.h===i)===(d>0)?-1:1};
  return t.sort((a,b)=>b.pt-a.pt||b.gd-a.gd||h2(a.i,b.i)||a.cd-b.cd||b.gf-a.gf)}
-function evs(){const sc={},cd={};M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{const k=x.n+"|"+x.tm;if(x.t==="g"){sc[k]=sc[k]||{n:x.n,tm:x.tm,c:0};sc[k].c++}else{cd[k]=cd[k]||{n:x.n,tm:x.tm,y:0,r:0};x.t==="y"?cd[k].y++:cd[k].r++}}));return{sc:Object.values(sc).sort((a,b)=>b.c-a.c),cd:Object.values(cd).sort((a,b)=>b.r-a.r||b.y-a.y)}}
+function evs(){const sc={},cd={};M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{const k=x.n+"|"+x.tm;if(x.t==="g"){sc[k]=sc[k]||{n:x.n,tm:x.tm,c:0};sc[k].c++}else if(x.t==="y"||x.t==="r"){cd[k]=cd[k]||{n:x.n,tm:x.tm,y:0,r:0};x.t==="y"?cd[k].y++:cd[k].r++}}));return{sc:Object.values(sc).sort((a,b)=>b.c-a.c),cd:Object.values(cd).sort((a,b)=>b.r-a.r||b.y-a.y)}}
 
 function home(){
  const ns=Object.entries(S.news).sort((a,b)=>b[1].ts-a[1].ts);
@@ -86,7 +86,7 @@ function home(){
  h+=`<h2>Thẻ phạt</h2>`+(v.cd.length?`<div class="sc"><table><tr><th class="l">Cầu thủ</th><th class="l">Đội</th><th>🟨</th><th>🟥</th></tr>${v.cd.map(x=>`<tr><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.y}</td><td>${x.r}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có thẻ phạt.</div>`);
  return h}
 
-function evCols(r,m,del){const ic={g:"⚽",y:"🟨",r:"🟥"};const col=tm=>r.ev.map((x,i)=>x.tm===tm?`<div class="sm">${ic[x.t]} ${e(x.n)}${del?` <button class="b x" data-a="dev" data-i="${i}">✕</button>`:""}</div>`:"").join("");return `<div class="cols"><div><b class="sm">${e(T[m.h])}</b>${col(m.h)}</div><div><b class="sm">${e(T[m.a])}</b>${col(m.a)}</div></div>`}
+function evCols(r,m,del){const ic={g:"⚽",og:"⚽",y:"🟨",r:"🟥"};const col=tm=>r.ev.map((x,i)=>x.tm===tm?`<div class="sm">${ic[x.t]} ${e(x.n)}${x.t==="og"?` <span class="mut">(phản lưới)</span>`:""}${del?` <button class="b x" data-a="dev" data-i="${i}">✕</button>`:""}</div>`:"").join("");return `<div class="cols"><div><b class="sm">${e(T[m.h])}</b>${col(m.h)}</div><div><b class="sm">${e(T[m.a])}</b>${col(m.a)}</div></div>`}
 function sch(){
  let h=`<div class="row"><select data-c="rd"><option value="all">Tất cả các vòng</option>${[1,2,3,4,5].map(r=>`<option value="${r}" ${S.rd==r?"selected":""}>Vòng ${r}</option>`).join("")}</select><select data-c="tm"><option value="">Tất cả đội</option>${T.map((n,i)=>`<option value="${i}" ${S.tm===String(i)?"selected":""}>${e(n)}</option>`).join("")}</select></div>`;
  if(!S.uid)h+=`<div class="note">Đăng nhập (tab Cầu thủ) để dự đoán kết quả và đăng ký tham gia trận.</div>`;
@@ -114,14 +114,14 @@ function sch(){
   if(pl&&p&&p.w){const w=r.h>r.a?"h":r.h<r.a?"a":"d";h+=`<div class="sm mut">Bạn dự đoán ${p.w===w?"đúng ✅":"chưa đúng ❌"}${p.h!==""?` (${e(p.h)}-${e(p.a)})`:""}</div>`}
   if(S.admin){
    if(S.edit===m.id){const d=S.draft,ro=Object.values(S.players).filter(x=>x.team===m.h||x.team===m.a).map(x=>`<option value="${e(x.name)}">`).join("");
-    h+=`<div class="ed"><div class="row"><b>Trọng tài:</b><input id="er" value="${e(d.ref??m.ref)}"></div><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.length?evCols(d,m,true):""}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" list="ros" placeholder="Tên cầu thủ"><datalist id="ros">${ro}</datalist><button class="b s" data-a="aev">Thêm</button></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
+    h+=`<div class="ed"><div class="row"><b>Trọng tài:</b><input id="er" value="${e(d.ref??m.ref)}"></div><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.length?evCols(d,m,true):""}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="og">⚽ Phản lưới</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" list="ros" placeholder="Tên cầu thủ"><datalist id="ros">${ro}</datalist><button class="b s" data-a="aev">Thêm</button></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
    else h+=`<div class="row"><button class="b s" data-a="edit" data-m="${m.id}">Nhập kết quả</button></div>`}
   h+=`</div>`});
  return h}
 
 function pplay(){const p=S.players[S.pv],bk=`<button class="b s" data-a="backp">← Quay lại</button>`;
  if(!p)return bk+`<div class="note" style="margin-top:10px">Không tìm thấy cầu thủ.</div>`;
- let g=0,y=0,rd=0;if(p.team!=null)M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{if(x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase()){x.t==="g"?g++:x.t==="y"?y++:rd++}}));
+ let g=0,y=0,rd=0;if(p.team!=null)M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{if(x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase()){x.t==="g"?g++:x.t==="y"?y++:x.t==="r"?rd++:0}}));
  return bk+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table><tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
 function teams(){
  const P=Object.entries(S.players),mine=S.players[S.uid];
