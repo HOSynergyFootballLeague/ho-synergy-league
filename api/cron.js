@@ -2,6 +2,7 @@
 const T = ["Mượt mà", "Hài vãi", "Phòng kính", "VPS United", "Platform", "Lá chắn"];
 const E = process.env;
 const MIN = 7; // số người đăng ký tối thiểu mỗi đội
+const PR_RIGHT = 1, PR_EXACT = 3; // thưởng 🍺 khi dự đoán đúng kết quả / đúng tỷ số
 const fd = s => s.slice(8, 10) + "/" + s.slice(5, 7);
 
 const sbGet = async (table, extra = "") => {
@@ -9,6 +10,15 @@ const sbGet = async (table, extra = "") => {
     headers: { apikey: E.SUPABASE_ANON_KEY, Authorization: "Bearer " + E.SUPABASE_ANON_KEY }
   });
   if (!r.ok) throw new Error(table + ": " + (await r.text()));
+  return r.json();
+};
+const sbRpc = async (fn, body = {}) => {
+  const r = await fetch(`${E.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: E.SUPABASE_ANON_KEY, Authorization: "Bearer " + E.SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(fn + ": " + (await r.text()));
   return r.json();
 };
 const zalo = async (method, body) => {
@@ -46,7 +56,56 @@ function remind(day, today, all) {
     "\n\n" + rankText(all) + "\n\n" + link;
 }
 
-function recap(day, yest, all, events) {
+const outcome = m => (m.hg > m.ag ? "h" : m.hg < m.ag ? "a" : "d");
+const hasScore = p => p.pred_home != null && p.pred_away != null;
+const wOf = p => p.winner || (hasScore(p) ? (p.pred_home > p.pred_away ? "h" : p.pred_home < p.pred_away ? "a" : "d") : null);
+const pscore = (p, m) => {
+  if (!m || m.hg == null || m.ag == null) return 0;
+  if (hasScore(p) && p.pred_home === m.hg && p.pred_away === m.ag) return PR_EXACT;
+  return wOf(p) === outcome(m) ? PR_RIGHT : 0;
+};
+const pdesc = (p, m) => {
+  const w = wOf(p), parts = [];
+  if (w) parts.push(w === "h" ? `${T[m.home]} thắng` : w === "a" ? `${T[m.away]} thắng` : "Hòa");
+  if (hasScore(p)) parts.push(`tỷ số ${p.pred_home}-${p.pred_away}`);
+  return parts.join(", ") || "—";
+};
+
+function predText(day, preds) {
+  const lines = [];
+  day.forEach(m => {
+    const ps = preds.filter(p => p.match_id === m.id);
+    if (!ps.length) return;
+    const exact = ps.filter(p => pscore(p, m) === PR_EXACT).map(p => p.name);
+    const right = ps.filter(p => pscore(p, m) === PR_RIGHT).map(p => p.name);
+    let l = `⚽ ${T[m.home]} ${m.hg}-${m.ag} ${T[m.away]} (${exact.length + right.length}/${ps.length} người đoán đúng)`;
+    if (exact.length) l += `\n🎯 Đúng tỷ số (+${PR_EXACT}🍺): ${exact.join(", ")}`;
+    if (right.length) l += `\n✅ Đúng kết quả (+${PR_RIGHT}🍺): ${right.join(", ")}`;
+    if (!exact.length && !right.length) l += `\n😅 Chưa ai đoán đúng`;
+    lines.push(l);
+  });
+  if (!lines.length) return "";
+  return "🔮 DỰ ĐOÁN - Chúc mừng các nhà tiên tri!\n" + lines.join("\n");
+}
+
+// Tin nhắn riêng cho từng người đã liên kết Zalo
+function dmRemind(todays, mine) {
+  const lines = todays.map(m => { const p = mine.find(x => x.match_id === m.id); return p ? `⚽ ${T[m.home]} vs ${T[m.away]}: ${pdesc(p, m)}` : null; }).filter(Boolean);
+  return lines.length ? `🔮 Hôm nay bạn đã dự đoán:\n${lines.join("\n")}\nChúc bạn may mắn! 🍀` : null;
+}
+function dmRecap(day, mine, all) {
+  const lines = day.map(m => {
+    const p = mine.find(x => x.match_id === m.id);
+    if (!p) return null;
+    const s = pscore(p, m);
+    return `⚽ ${T[m.home]} ${m.hg}-${m.ag} ${T[m.away]}\n   Bạn dự đoán: ${pdesc(p, m)}\n   ${s === PR_EXACT ? `🎯 Đúng tỷ số! +${PR_EXACT}🍺` : s === PR_RIGHT ? `✅ Đúng kết quả! +${PR_RIGHT}🍺` : "❌ Chưa đúng lần này"}`;
+  }).filter(Boolean);
+  if (!lines.length) return null;
+  const total = mine.reduce((a, p) => a + pscore(p, all.find(m => m.id === p.match_id)), 0);
+  return `🔮 KẾT QUẢ DỰ ĐOÁN CỦA BẠN\n${lines.join("\n")}\n\n🍺 Tổng thưởng dự đoán của bạn: ${total}🍺 (không tính vào giá trị chuyển nhượng)\n${link}`;
+}
+
+function recap(day, yest, all, events, preds = []) {
   const ids = new Set(day.map(m => m.id));
   let s = `📣 KẾT QUẢ NGÀY ${fd(yest)}\n` + day.map(m => `⚽ ${T[m.home]} ${m.hg} - ${m.ag} ${T[m.away]}`).join("\n");
   const wins = [], draws = [];
@@ -69,6 +128,8 @@ function recap(day, yest, all, events) {
   if (owng.length) s += `\n🙈 Phản lưới: ` + owng.join(", ") + ".";
   const c = Object.entries(cards);
   if (c.length) s += `\n🟨🟥 Thẻ phạt: ` + c.map(([k, v]) => k + " " + (v.y ? "🟨".repeat(v.y) : "") + (v.r ? "🟥".repeat(v.r) : "")).join(", ");
+  const pt = predText(day, preds);
+  if (pt) s += "\n\n" + pt;
   return s + "\n\n" + rankText(all) + "\n\n" + link;
 }
 
@@ -109,15 +170,30 @@ module.exports = async (req, res) => {
       if (q.dry) return res.status(200).json({ today, messages: [s] });
       return res.status(200).json({ today, sent: 1, results: [await zalo("sendMessage", { chat_id: E.ZALO_CHAT_ID, text: s })] });
     }
-    const msgs = [];
+    const msgs = [], dms = [];
     const todays = all.filter(m => m.match_date === today);
     const ydone = all.filter(m => m.match_date === yest && m.hg != null && m.ag != null);
-    if (q.mode !== "recap" && todays.length) msgs.push(remind(todays, today, all));
-    if (q.mode !== "remind" && ydone.length) msgs.push(recap(ydone, yest, all, events));
-    if (q.dry) return res.status(200).json({ today, messages: msgs });
+    let preds = [];
+    if ((q.mode !== "recap" && todays.length) || (q.mode !== "remind" && ydone.length)) {
+      try { preds = await sbRpc("bot_predictions", { p_secret: E.CRON_SECRET }); }
+      catch (x) { try { preds = await sbRpc("finished_predictions"); } catch (y) { /* chưa tạo hàm SQL: bỏ qua phần dự đoán */ } }
+    }
+    const byUser = {};
+    preds.forEach(p => { if (p.chat_id) (byUser[p.user_id] = byUser[p.user_id] || { chat_id: p.chat_id, list: [] }).list.push(p); });
+    if (q.mode !== "recap" && todays.length) {
+      msgs.push(remind(todays, today, all));
+      Object.values(byUser).forEach(u => { const t = dmRemind(todays, u.list); if (t) dms.push({ chat_id: u.chat_id, text: t }); });
+    }
+    if (q.mode !== "remind" && ydone.length) {
+      msgs.push(recap(ydone, yest, all, events, preds));
+      Object.values(byUser).forEach(u => { const t = dmRecap(ydone, u.list, all); if (t) dms.push({ chat_id: u.chat_id, text: t }); });
+    }
+    if (q.dry) return res.status(200).json({ today, messages: msgs, dms: dms.map(d => d.text) });
     const results = [];
     for (const text of msgs) results.push(await zalo("sendMessage", { chat_id: E.ZALO_CHAT_ID, text }));
-    return res.status(200).json({ today, sent: msgs.length, results });
+    const dmResults = [];
+    for (const d of dms) dmResults.push((await zalo("sendMessage", d)).ok);
+    return res.status(200).json({ today, sent: msgs.length, dmSent: dmResults.filter(Boolean).length, dmFailed: dmResults.filter(x => !x).length, results });
   } catch (x) {
     return res.status(500).json({ error: String(x.message || x) });
   }
