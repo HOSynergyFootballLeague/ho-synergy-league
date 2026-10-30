@@ -84,8 +84,24 @@ function home(){
  const v=evs(),mx=v.sc[0]?.c;
  h+=`<h2>⚽ Vua phá lưới</h2>`+(v.sc.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th class="l">Đội</th><th>Bàn</th></tr>${v.sc.map((x,k)=>`<tr class="${x.c===mx?"top":""}"><td>${k+1}</td><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.c}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có dữ liệu.</div>`);
  h+=`<h2>Thẻ phạt</h2>`+(v.cd.length?`<div class="sc"><table><tr><th class="l">Cầu thủ</th><th class="l">Đội</th><th>🟨</th><th>🟥</th></tr>${v.cd.map(x=>`<tr><td class="l">${e(x.n)}</td><td class="l">${e(T[x.tm])}</td><td>${x.y}</td><td>${x.r}</td></tr>`).join("")}</table></div>`:`<div class="mut sm">Chưa có thẻ phạt.</div>`);
+ h+=valBoard();
  return h}
 
+const fv=n=>Number.isInteger(n)?String(n):n.toFixed(1).replace(".",",");
+function val(uid){const p=S.players[uid];let b=5,l=5;if(!p)return{b,l};
+ const mine=x=>x.pid?x.pid===uid:(p.team!=null&&x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase());
+ M.forEach(m=>{if(!ok(m))return;const r=R(m.id),ev=(r.ev||[]).filter(mine);
+  const inM=p.team===m.h||p.team===m.a;
+  if(!((inM&&(S.att[m.id]||[]).includes(uid))||ev.length))return;
+  b+=.5;l+=.5;
+  const t=inM?p.team:ev[0]?.tm;
+  if(t===m.h||t===m.a){const gf=t===m.h?r.h:r.a,ga=t===m.h?r.a:r.h;if(gf>ga){b+=1;l+=1}else if(gf<ga)b-=1}
+  ev.forEach(x=>{if(x.t==="g"){b+=.5;l+=.5}else if(x.t==="y")b-=.5;else if(x.t==="r")b-=1});
+ });
+ return{b:Math.max(0,b),l:Math.max(0,l)}}
+const vt=u=>{const v=val(u);return `${fv(v.b)}🍺 ${fv(v.l)}🥜`};
+function valBoard(){const L=Object.entries(S.players).filter(([k,p])=>p.team!=null).map(([k,p])=>({k,p,v:val(k)})).sort((a,b)=>(b.v.b+b.v.l)-(a.v.b+a.v.l)||b.v.b-a.v.b).slice(0,10);
+ return `<h2>💰 Giá trị chuyển nhượng</h2>`+(L.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th class="l">Đội</th><th>🍺</th><th>🥜</th></tr>${L.map((x,i)=>`<tr><td>${i+1}</td><td class="l"><a href="#p-${e(x.k)}" style="color:inherit;font-weight:600">${e(x.p.name)}</a></td><td class="l">${e(T[x.p.team])}</td><td>${fv(x.v.b)}</td><td>${fv(x.v.l)}</td></tr>`).join("")}</table></div><div class="mut sm">Khởi điểm 5🍺 5🥜. Tham gia trận +0,5 mỗi loại; đội thắng +1 mỗi loại, đội thua −1🍺; ghi bàn +0,5 mỗi loại; thẻ vàng −0,5🍺, thẻ đỏ −1🍺; phản lưới không tính. Thấp nhất là 0.</div>`:`<div class="mut sm">Chưa có cầu thủ đăng ký đội.</div>`)}
 function evCols(r,m,del){const ic={g:"⚽",og:"⚽",y:"🟨",r:"🟥"};const col=tm=>r.ev.map((x,i)=>x.tm===tm?`<div class="sm">${ic[x.t]} ${e(x.n)}${x.t==="og"?` <span class="mut">(phản lưới)</span>`:""}${del?` <button class="b x" data-a="dev" data-i="${i}">✕</button>`:""}</div>`:"").join("");return `<div class="cols"><div><b class="sm">${e(T[m.h])}</b>${col(m.h)}</div><div><b class="sm">${e(T[m.a])}</b>${col(m.a)}</div></div>`}
 function sch(){
  let h=`<div class="row"><select data-c="rd"><option value="all">Tất cả các vòng</option>${[1,2,3,4,5].map(r=>`<option value="${r}" ${S.rd==r?"selected":""}>Vòng ${r}</option>`).join("")}</select><select data-c="tm"><option value="">Tất cả đội</option>${T.map((n,i)=>`<option value="${i}" ${S.tm===String(i)?"selected":""}>${e(n)}</option>`).join("")}</select></div>`;
@@ -101,11 +117,11 @@ function sch(){
   h+=`<div class="card"><div class="mt"><span class="tn">${logo(m.h,24)} ${e(T[m.h])}</span>${pl?`<b class="sco">${r.h} - ${r.a}</b>`:`<span class="mut">vs</span>`}<span class="tn r">${e(T[m.a])} ${logo(m.a,24)}</span></div>`;
   if(m.ref)h+=`<div class="sm mut">Trọng tài: ${e(m.ref)}</div>`;
   if(pl&&r.ev?.length)h+=evCols(r,m,false);
-  if(!pl){
+  {
    const att=(S.att[m.id]||[]).filter(u=>S.players[u]).map(u=>({id:u,...S.players[u]}));
-   const lst=tm=>{const a=att.filter(x=>x.team===tm);return `<div><b class="sm">${e(T[tm])} (${a.length})${a.length<7?" ⚠️":""}</b>${S.admin||mine?.team===tm?a.map(x=>`<div class="sm"><a href="#p-${e(x.id)}" style="color:inherit">${e(x.name)}</a></div>`).join(""):""}</div>`};
-   h+=`<div class="sm" style="margin-top:8px"><b>📝 Đăng ký tham gia</b></div><div class="cols">${lst(m.h)}${lst(m.a)}</div>`;
-   if(S.uid&&mine&&(mine.team===m.h||mine.team===m.a))h+=`<div class="row">${(S.att[m.id]||[]).includes(S.uid)?`<button class="b x" data-a="unattend" data-m="${m.id}">Hủy đăng ký tham gia</button>`:`<button class="b" data-a="attend" data-m="${m.id}">✅ Đăng ký tham gia</button>`}</div>`;
+   const lst=tm=>{const a=att.filter(x=>x.team===tm);return `<div><b class="sm">${e(T[tm])} (${a.length})${!pl&&a.length<7?" ⚠️":""}</b>${S.admin||mine?.team===tm?a.map(x=>`<div class="sm"><a href="#p-${e(x.id)}" style="color:inherit">${e(x.name)}</a>${S.admin?` <button class="b x" data-a="rmatt" data-u="${e(x.id)}" data-m="${m.id}">✕</button>`:""}</div>`).join(""):""}</div>`};
+   h+=`<div class="sm" style="margin-top:8px"><b>${pl?"✅ Cầu thủ tham gia":"📝 Đăng ký tham gia"}</b></div><div class="cols">${lst(m.h)}${lst(m.a)}</div>`;
+   if(!pl&&S.uid&&mine&&(mine.team===m.h||mine.team===m.a))h+=`<div class="row">${(S.att[m.id]||[]).includes(S.uid)?`<button class="b x" data-a="unattend" data-m="${m.id}">Hủy đăng ký tham gia</button>`:`<button class="b" data-a="attend" data-m="${m.id}">✅ Đăng ký tham gia</button>`}</div>`;
   }
   if(!pl&&S.uid){
    if(p){const wt=p.w==="h"?e(T[m.h])+" thắng":p.w==="a"?e(T[m.a])+" thắng":p.w==="d"?"Hòa":"";h+=`<div class="sm" style="margin-top:6px">🔒 Dự đoán của bạn: ${[wt,p.h!==""?"tỷ số "+e(p.h)+"-"+e(p.a):""].filter(Boolean).join(" · ")} (đã chốt)</div>`}
@@ -114,15 +130,15 @@ function sch(){
   if(pl&&p&&p.w){const w=r.h>r.a?"h":r.h<r.a?"a":"d";h+=`<div class="sm mut">Bạn dự đoán ${p.w===w?"đúng ✅":"chưa đúng ❌"}${p.h!==""?` (${e(p.h)}-${e(p.a)})`:""}</div>`}
   if(S.admin){
    if(S.edit===m.id){const d=S.draft,ro=Object.values(S.players).filter(x=>x.team===m.h||x.team===m.a).map(x=>`<option value="${e(x.name)}">`).join("");
-    h+=`<div class="ed"><div class="row"><b>Trọng tài:</b><input id="er" value="${e(d.ref??m.ref)}"></div><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.length?evCols(d,m,true):""}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="og">⚽ Phản lưới</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" list="ros" placeholder="Tên cầu thủ"><datalist id="ros">${ro}</datalist><button class="b s" data-a="aev">Thêm</button></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
+    h+=`<div class="ed"><div class="row"><b>Trọng tài:</b><input id="er" value="${e(d.ref??m.ref)}"></div><div class="row"><b>Kết quả:</b><input type="number" min="0" id="eh" value="${d.h}"> - <input type="number" min="0" id="ea" value="${d.a}"></div>${d.ev.length?evCols(d,m,true):""}<div class="row"><select id="et"><option value="g">⚽ Bàn thắng</option><option value="og">⚽ Phản lưới</option><option value="y">🟨 Thẻ vàng</option><option value="r">🟥 Thẻ đỏ</option></select><select id="ep"><option value="">— Chọn cầu thủ —</option>${[m.h,m.a].map(tm=>`<optgroup label="${e(T[tm])}">${Object.entries(S.players).filter(([k,x])=>x.team===tm).map(([k,x])=>`<option value="${e(k)}" data-t="${tm}">${e(x.name)} (#${e(x.num)})</option>`).join("")}</optgroup>`).join("")}</select><button class="b s" data-a="aev">Thêm</button></div><div class="row sm mut">Không có trong danh sách?<select id="etm"><option value="${m.h}">${e(T[m.h])}</option><option value="${m.a}">${e(T[m.a])}</option></select><input id="en" placeholder="Nhập tên"></div><div class="row"><button class="b" data-a="sres">Lưu kết quả</button><button class="b s" data-a="unedit">Đóng</button></div></div>`}
    else h+=`<div class="row"><button class="b s" data-a="edit" data-m="${m.id}">Nhập kết quả</button></div>`}
   h+=`</div>`});
  return h}
 
 function pplay(){const p=S.players[S.pv],bk=`<button class="b s" data-a="backp">← Quay lại</button>`;
  if(!p)return bk+`<div class="note" style="margin-top:10px">Không tìm thấy cầu thủ.</div>`;
- let g=0,y=0,rd=0;if(p.team!=null)M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{if(x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase()){x.t==="g"?g++:x.t==="y"?y++:x.t==="r"?rd++:0}}));
- return bk+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table><tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
+ let g=0,y=0,rd=0;M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{if(x.pid?x.pid===S.pv:(x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase())){x.t==="g"?g++:x.t==="y"?y++:x.t==="r"?rd++:0}}));
+ return bk+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table><tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Giá trị</td><td class="l"><b>${vt(S.pv)}</b></td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
 function teams(){
  const P=Object.entries(S.players),mine=S.players[S.uid];
  if(S.open===null){
@@ -130,7 +146,7 @@ function teams(){
   let h=S.admin&&pend.length?`<div class="note">⏳ ${pend.length} yêu cầu hủy đăng ký chờ duyệt (mở đội để xác nhận).</div>`:"";
   return h+`<div class="grid">${T.map((n,i)=>`<div class="tc" data-a="open" data-i="${i}">${logo(i,56)}<div>${e(n)}</div><div class="mut sm">${P.filter(([k,p])=>p.team===i).length} cầu thủ</div></div>`).join("")}</div>`}
  const i=S.open,ro=P.filter(([k,p])=>p.team===i).sort((a,b)=>a[1].num-b[1].num);
- let h=`<button class="b s" data-a="back">← Danh sách đội</button><div class="card" style="text-align:center">${logo(i,64)}<h2>${e(T[i])}</h2>${S.admin?`<label class="b s sm">Đổi avatar đội<input type="file" accept="image/*" data-c="tav" data-i="${i}" hidden></label>`:""}</div><div class="sc"><table><tr><th>Số áo</th><th class="l">Cầu thủ</th>${S.admin?"<th></th>":""}</tr>${ro.map(([k,p])=>`<tr><td><b>${e(p.num)}</b></td><td class="l">${pav(p,24)} <a href="#p-${e(k)}" style="color:inherit;font-weight:600">${e(p.name)}</a>${p.position?` <span class="mut sm">${e(p.position)}</span>`:""}${p.cancel?` <span class="mut sm">⏳ xin hủy</span>`:""}</td>${S.admin?`<td>${p.cancel?`<button class="b x" data-a="approve" data-p="${e(k)}">Duyệt hủy</button>`:""}</td>`:""}</tr>`).join("")||`<tr><td colspan="3" class="mut">Chưa có cầu thủ đăng ký.</td></tr>`}</table></div>`;
+ let h=`<button class="b s" data-a="back">← Danh sách đội</button><div class="card" style="text-align:center">${logo(i,64)}<h2>${e(T[i])}</h2>${S.admin?`<label class="b s sm">Đổi avatar đội<input type="file" accept="image/*" data-c="tav" data-i="${i}" hidden></label>`:""}</div><div class="sc"><table><tr><th>Số áo</th><th class="l">Cầu thủ</th><th>Giá trị</th>${S.admin?"<th></th>":""}</tr>${ro.map(([k,p])=>`<tr><td><b>${e(p.num)}</b></td><td class="l">${pav(p,24)} <a href="#p-${e(k)}" style="color:inherit;font-weight:600">${e(p.name)}</a>${p.position?` <span class="mut sm">${e(p.position)}</span>`:""}${p.cancel?` <span class="mut sm">⏳ xin hủy</span>`:""}</td><td class="sm" style="white-space:nowrap">${vt(k)}</td>${S.admin?`<td>${p.cancel?`<button class="b x" data-a="approve" data-p="${e(k)}">Duyệt hủy</button>`:""}</td>`:""}</tr>`).join("")||`<tr><td colspan="4" class="mut">Chưa có cầu thủ đăng ký.</td></tr>`}</table></div>`;
  if(!S.uid)return h+`<div class="note">Đăng nhập (tab Cầu thủ) để đăng ký vào đội.</div>`;
  if(mine?.team===i)h+=mine.cancel?`<div class="note">Đã gửi yêu cầu hủy đăng ký, chờ admin xác nhận.</div>`:`<button class="b x" data-a="cancel">Yêu cầu hủy đăng ký</button>`;
  else if(mine?.team!=null)h+=`<div class="note">Bạn đã đăng ký đội ${e(T[mine.team])}. Cần hủy đăng ký (admin xác nhận) trước khi sang đội khác.</div>`;
@@ -157,7 +173,7 @@ async function load(){
   const [m,ev,pf,nw,ta,st,at]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*"),sb.from("attendance").select("*")]);
   M=(m.data||[]).map(x=>({id:x.id,r:x.round,h:x.home,a:x.away,date:new Date(x.match_date+"T00:00:00"),ref:x.referee||""}));
   S.res={};(m.data||[]).forEach(x=>{if(x.hg!=null&&x.ag!=null)S.res[x.id]={h:x.hg,a:x.ag,ev:[]}});
-  (ev.data||[]).forEach(x=>S.res[x.match_id]?.ev.push({t:x.type,tm:x.team,n:x.player}));
+  (ev.data||[]).forEach(x=>S.res[x.match_id]?.ev.push({t:x.type,tm:x.team,n:x.player,pid:x.player_id}));
   S.players={};(pf.data||[]).forEach(p=>S.players[p.id]={name:p.name,bd:p.bd,av:p.avatar,team:p.team,num:p.num,cancel:p.cancel,admin:p.is_admin,height:p.height,weight:p.weight,position:p.pos});
   S.news={};(nw.data||[]).forEach(n=>S.news[n.id]={t:n.content,ts:Date.parse(n.created_at)});
   S.tav={};(ta.data||[]).forEach(x=>S.tav[x.team]={img:x.img});
@@ -174,8 +190,10 @@ const X=async p=>{const r=await p;if(r.error)throw r.error;return r};
 const W=async fn=>{try{await fn();await load()}catch(x){alert(x.message||x)}};
 const syncDraft=()=>{if(S.draft){S.draft.h=$("#eh")?.value===""?"":+$("#eh").value;S.draft.a=$("#ea")?.value===""?"":+$("#ea").value;S.draft.ref=$("#er")?.value??S.draft.ref}};
 const shrink=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const c=document.createElement("canvas");c.width=c.height=96;const s=Math.min(i.width,i.height);c.getContext("2d").drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,96,96);res(c.toDataURL("image/jpeg",.8))};i.onerror=rej;i.src=r.result};r.readAsDataURL(f)});
+function pend(){const ep=$("#ep");if(!ep)return null;const t=$("#et").value;if(ep.value){const o=ep.selectedOptions[0],p=S.players[ep.value];return{t,tm:+o.dataset.t,n:p?.name||o.text,pid:ep.value}}const n=$("#en").value.trim();return n?{t,tm:+$("#etm").value,n}:null}
 const A={
  backp:()=>{location.hash=""},
+ rmatt:d=>{if(confirm("Gỡ cầu thủ này khỏi danh sách tham gia?"))W(()=>X(sb.from("attendance").delete().eq("user_id",d.u).eq("match_id",d.m)))},
  attend:d=>W(()=>X(sb.from("attendance").insert({user_id:S.uid,match_id:d.m}))),
  unattend:d=>W(()=>X(sb.from("attendance").delete().eq("user_id",S.uid).eq("match_id",d.m))),
  savepred:d=>{const r=document.querySelector(`.pr[data-m="${d.m}"]`),[w,h,a]=r.querySelectorAll("select,input");
@@ -199,13 +217,13 @@ const A={
  zalo:()=>W(()=>X(sb.from("settings").upsert({key:"zalo",value:$("#zl").value.trim()}))),
  edit:d=>{const r=R(d.m);S.edit=d.m;S.draft=r?JSON.parse(JSON.stringify(r)):{h:"",a:"",ev:[]};draw(1)},
  unedit:()=>{S.edit=null;S.draft=null;draw(1)},
- aev:()=>{syncDraft();const n=$("#en").value.trim();if(!n)return alert("Nhập tên cầu thủ.");S.draft.ev.push({t:$("#et").value,tm:+$("#etm").value,n});draw(1)},
+ aev:()=>{syncDraft();const x=pend();if(!x)return alert("Chọn cầu thủ hoặc nhập tên.");S.draft.ev.push(x);draw(1)},
  dev:d=>{syncDraft();S.draft.ev.splice(+d.i,1);draw(1)},
- sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");const pn=$("#en")?.value.trim();if(pn)d.ev.push({t:$("#et").value,tm:+$("#etm").value,n:pn});W(async()=>{
+ sres:()=>{syncDraft();const d=S.draft,id=S.edit;if(typeof d.h!=="number"||typeof d.a!=="number")return alert("Nhập tỷ số.");const px=pend();if(px)d.ev.push(px);W(async()=>{
  const r=await X(sb.from("matches").update({hg:d.h,ag:d.a}).eq("id",id).select());
  if(!r.data.length)throw new Error("Không lưu được: tài khoản chưa có quyền admin (xem lại bước 6).");
  await X(sb.from("events").delete().eq("match_id",id));
- if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n}))));
+ if(d.ev.length)await X(sb.from("events").insert(d.ev.map(x=>({match_id:id,type:x.t,team:x.tm,player:x.n,player_id:x.pid||null}))));
  const rf=await sb.from("matches").update({referee:(d.ref??"").trim()||null}).eq("id",id);
  S.edit=null;S.draft=null;
  alert(rf.error?"Đã lưu kết quả, nhưng chưa lưu được trọng tài: cần chạy lệnh SQL thêm cột referee trong Supabase.":"Đã lưu kết quả.")})}
