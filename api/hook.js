@@ -2,6 +2,7 @@
 //  - Nhắn riêng "LINK <mã>" để liên kết tài khoản web với Zalo (bot sẽ nhắn riêng dự đoán)
 //  - Nhắn "/id" để lấy chat_id (dùng khi cài ZALO_CHAT_ID)
 const E = process.env;
+const { answer } = require("../lib/ask.js");
 const findMsg = o => {
   if (!o || typeof o !== "object") return null;
   if (o.chat && o.chat.id) return o;
@@ -65,8 +66,11 @@ module.exports = async (req, res) => {
         const ok = r.ok && (await r.json()) === true;
         await send(chat.id, ok ? "✅ Đã liên kết Zalo với tài khoản của bạn. Bot sẽ nhắn riêng phần dự đoán và kết quả cho bạn!" : "❌ Mã không đúng hoặc đã hết hạn (15 phút). Bạn vào web, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" để lấy mã mới nhé.");
       } else if (priv || text) {
-        const hit = faqMatch(text, await faqRows());
-        if (hit) await send(chat.id, hit.ans.replace(/\{link\}/gi, E.SITE_URL || ""));
+        let dyn = null;
+        try { dyn = await answer(E, text, [String(chat.id), m.from && m.from.id ? String(m.from.id) : null].filter(Boolean)); } catch (x) { /* bỏ qua, dùng bảng câu hỏi */ }
+        const hit = dyn ? null : faqMatch(text, await faqRows());
+        if (dyn) await send(chat.id, dyn);
+        else if (hit) await send(chat.id, hit.ans.replace(/\{link\}/gi, E.SITE_URL || ""));
         else if (priv) await send(chat.id, "Xin chào! Mình chưa hiểu câu hỏi này. Bạn thử hỏi: lịch đấu, bảng xếp hạng, cách đăng ký... Để nhận tin dự đoán riêng, vào web giải đấu, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" rồi nhắn mình: LINK <mã>");
       }
     }
