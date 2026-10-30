@@ -1,6 +1,7 @@
 // Bot Zalo HO Synergy League - chạy mỗi sáng 8:00 (giờ VN) qua Vercel Cron
 const T = ["Mượt mà", "Hài vãi", "Phòng kính", "VPS United", "Platform", "Lá chắn"];
 const E = process.env;
+const MIN = 7; // số người đăng ký tối thiểu mỗi đội
 const fd = s => s.slice(8, 10) + "/" + s.slice(5, 7);
 
 const sbGet = async (table, extra = "") => {
@@ -84,6 +85,30 @@ module.exports = async (req, res) => {
     const yest = new Date(Date.parse(today + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
     const [all, events] = await Promise.all([sbGet("matches", "&order=round,id"), sbGet("events")]);
     EV = events;
+    if (q.mode === "friday") {
+      const up = all.filter(m => m.hg == null && m.match_date >= today).sort((a, b) => a.match_date.localeCompare(b.match_date) || a.id.localeCompare(b.id));
+      if (!up.length) return res.status(200).json({ today, sent: 0, note: "Không còn trận sắp tới" });
+      const day = up[0].match_date, ms = up.filter(m => m.match_date === day);
+      const [att, prof] = await Promise.all([sbGet("attendance"), sbGet("profiles")]);
+      const team = Object.fromEntries(prof.map(p => [p.id, p.team]));
+      const cnt = (mid, tm) => att.filter(a => a.match_id === mid && team[a.user_id] === tm).length;
+      const low = [];
+      let s = `📋 ĐĂNG KÝ THAM GIA TRẬN ĐẤU\n📅 Ngày ${fd(day)}:`;
+      ms.forEach(m => {
+        s += `\n\n${T[m.home]} vs ${T[m.away]}`;
+        [m.home, m.away].forEach(tm => {
+          const n = cnt(m.id, tm);
+          s += `\n• ${T[tm]}: ${n} người ${n < MIN ? "⚠️" : "✅"}`;
+          if (n < MIN) low.push(`${T[tm]} (${n}/${MIN})`);
+        });
+      });
+      s += low.length
+        ? `\n\n📢 ${low.join(", ")} đang đăng ký dưới ${MIN} người. Các bạn vào web đăng ký tham gia sớm nhé!`
+        : `\n\n🎉 Các đội đều đủ từ ${MIN} người đăng ký. Hẹn gặp ở sân!`;
+      s += "\n\n👉 Đăng ký tại: " + (E.SITE_URL || "");
+      if (q.dry) return res.status(200).json({ today, messages: [s] });
+      return res.status(200).json({ today, sent: 1, results: [await zalo("sendMessage", { chat_id: E.ZALO_CHAT_ID, text: s })] });
+    }
     const msgs = [];
     const todays = all.filter(m => m.match_date === today);
     const ydone = all.filter(m => m.match_date === yest && m.hg != null && m.ag != null);
