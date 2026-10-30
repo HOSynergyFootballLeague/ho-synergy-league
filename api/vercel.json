@@ -1,12 +1,6 @@
 {
   "crons": [
-    {
-      "path": "/api/cron",
-      "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/cron?mode=friday",
-      "schedule": "0 8 * * 5"
-    }
+    { "path": "/api/cron", "schedule": "0 1 * * *" },
+    { "path": "/api/friday", "schedule": "0 8 * * 5" }
   ]
 }
