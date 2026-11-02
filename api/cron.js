@@ -129,15 +129,18 @@ module.exports = async (req, res) => {
     const yest = new Date(Date.parse(today + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
     const [all, events] = await Promise.all([sbGet("matches", "&order=round,id"), sbGet("events")]);
     EV = events;
-    if (q.mode === "friday") {
+    if (q.mode === "friday" || q.mode === "regcheck") {
       const up = all.filter(m => m.hg == null && m.match_date >= today).sort((a, b) => a.match_date.localeCompare(b.match_date) || a.id.localeCompare(b.id));
       if (!up.length) return res.status(200).json({ today, sent: 0, note: "Không còn trận sắp tới" });
       const day = up[0].match_date, ms = up.filter(m => m.match_date === day);
+      const tmr = new Date(Date.parse(today + "T00:00:00Z") + 864e5).toISOString().slice(0, 10);
+      // regcheck (10:00 hằng ngày): chỉ nhắc khi ngày thi đấu là hôm nay hoặc ngày mai
+      if (q.mode === "regcheck" && day !== today && day !== tmr) return res.status(200).json({ today, sent: 0, note: "Chưa đến ngày nhắc" });
       const [att, prof] = await Promise.all([sbGet("attendance"), sbGet("profiles")]);
       const team = Object.fromEntries(prof.map(p => [p.id, p.team]));
       const cnt = (mid, tm) => att.filter(a => a.match_id === mid && team[a.user_id] === tm).length;
       const low = [];
-      let s = `📋 ĐĂNG KÝ THAM GIA TRẬN ĐẤU\n📅 Ngày ${fd(day)}:`;
+      let s = `📋 ĐĂNG KÝ THAM GIA TRẬN ĐẤU\n📅 ${day === today ? "Hôm nay" : day === tmr ? "Ngày mai" : "Ngày"} ${fd(day)}:`;
       ms.forEach(m => {
         s += `\n\n${T[m.home]} vs ${T[m.away]}`;
         [m.home, m.away].forEach(tm => {
