@@ -48,6 +48,7 @@ textarea{width:100%;box-sizing:border-box}
 <div class="mut sm" style="text-align:center;margin-top:6px">Đá vòng tròn một lượt: 5 vòng, mỗi vòng 3 trận</div>
 <div class="tabs"><button data-a="tab" data-t="home">Trang chủ</button><button data-a="tab" data-t="sch">Lịch đấu</button><button data-a="tab" data-t="teams">Đội bóng</button><button data-a="tab" data-t="me">Cầu thủ</button></div>
 <div id="app"><div class="mut">Đang tải…</div></div>
+<div id="stat" class="mut sm" style="text-align:center;margin:18px 0 6px"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -266,6 +267,15 @@ const C={
 document.addEventListener("click",ev=>{const b=ev.target.closest("[data-a]");if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
 document.addEventListener("change",ev=>{const t=ev.target,k=t.dataset.c;if(k&&C[k])C[k](t)});
 
+const ST={v:null,u:null,on:null};
+function stat(){const f=n=>n==null?"—":Number(n).toLocaleString("vi-VN");$("#stat").textContent=`👁 Lượt truy cập: ${f(ST.v)} · 👤 Người truy cập: ${f(ST.u)} · 🟢 Đang online: ${f(ST.on)}`}
+(function(){
+ let vid;try{vid=localStorage.getItem("vid");if(!vid){vid=(crypto.randomUUID?crypto.randomUUID().replace(/-/g,""):String(Math.random()).slice(2)+Date.now());localStorage.setItem("vid",vid)}}catch(x){vid=String(Math.random()).slice(2)+Date.now()}
+ let fresh=true;try{fresh=!sessionStorage.getItem("vs");sessionStorage.setItem("vs","1")}catch(x){}
+ stat();
+ try{sb.rpc("count_visit",{p_vid:vid,p_new:fresh}).then(({data})=>{if(data&&data[0]){ST.v=data[0].total_visits;ST.u=data[0].total_unique;stat()}})}catch(x){}
+ try{const ch=sb.channel("online",{config:{presence:{key:vid}}});ch.on("presence",{event:"sync"},()=>{ST.on=Object.keys(ch.presenceState()).length;stat()}).subscribe(async st=>{if(st==="SUBSCRIBED")await ch.track({at:Date.now()})})}catch(x){}
+})();
 function route(){const m=location.hash.match(/^#p-([0-9a-f-]{36})$/i);S.pv=m?m[1]:null;draw(1);scrollTo(0,0)}
 addEventListener("hashchange",route);route();
 sb.auth.onAuthStateChange((_,s)=>{const id=s?.user?.id||null;if(id!==S.uid||!S.loaded){S.uid=id;load()}});
