@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron", "schedule": "0 1 * * *" },
+    { "path": "/api/regcheck", "schedule": "0 3 * * 1,2" },
+    { "path": "/api/friday", "schedule": "0 8 * * 5" }
+  ]
+}
