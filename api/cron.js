@@ -1,5 +1,7 @@
 // Bot Zalo HO Synergy League - chạy mỗi sáng 8:00 (giờ VN) qua Vercel Cron
 const { T, standings } = require("../lib/core.js");
+const { weatherText } = require("../lib/weather.js");
+const weatherBlock = async () => { try { const w = await weatherText(E); return w ? "\n\n" + w : ""; } catch (x) { return ""; } };
 const E = process.env;
 const MIN = 7; // số người đăng ký tối thiểu mỗi đội
 const PR_RIGHT = 1, PR_EXACT = 3; // thưởng 🍺 khi dự đoán đúng kết quả / đúng tỷ số
@@ -167,7 +169,7 @@ module.exports = async (req, res) => {
     const byUser = {};
     preds.forEach(p => { if (p.chat_id) (byUser[p.user_id] = byUser[p.user_id] || { chat_id: p.chat_id, list: [] }).list.push(p); });
     if (q.mode !== "recap" && todays.length) {
-      msgs.push(remind(todays, today, all));
+      msgs.push(remind(todays, today, all) + (await weatherBlock()));
       Object.values(byUser).forEach(u => { const t = dmRemind(todays, u.list); if (t) dms.push({ chat_id: u.chat_id, text: t }); });
     }
     if (q.mode !== "remind" && ydone.length) {
