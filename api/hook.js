@@ -51,11 +51,13 @@ module.exports = async (req, res) => {
   if (!E.CRON_SECRET || req.headers["x-bot-api-secret-token"] !== E.CRON_SECRET) return res.status(401).json({ ok: false });
   try {
     const m = findMsg(req.body);
+    if (!m) console.log("zalo-raw", JSON.stringify(req.body).slice(0, 600));
     if (m) {
       const chat = m.chat, text = String(m.text || "").trim();
       const priv = String(chat.chat_type || "").toUpperCase() === "PRIVATE";
       const link = text.match(/^\/?link\s+([A-Za-z0-9]{4,16})/i);
-      if (/^\/?id\b/i.test(text)) {
+      console.log("zalo-msg", chat.chat_type, JSON.stringify(text.slice(0, 80)));
+      if (/(^|\s)\/id(\s|$)/i.test(text)) {
         await send(chat.id, `chat_id: ${chat.id}\nLoại: ${chat.chat_type || "?"}`);
       } else if (link && priv) {
         const r = await fetch(`${E.SUPABASE_URL}/rest/v1/rpc/link_zalo`, {
@@ -71,7 +73,7 @@ module.exports = async (req, res) => {
         const hit = dyn ? null : faqMatch(text, await faqRows());
         if (dyn) await send(chat.id, dyn);
         else if (hit) await send(chat.id, hit.ans.replace(/\{link\}/gi, E.SITE_URL || ""));
-        else if (priv) await send(chat.id, "Xin chào! Mình chưa hiểu câu hỏi này. Bạn thử hỏi: lịch đấu, bảng xếp hạng, cách đăng ký... Để nhận tin dự đoán riêng, vào web giải đấu, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" rồi nhắn mình: LINK <mã>");
+        else if (priv || /^\s*@/.test(text)) await send(chat.id, "Xin chào! Mình chưa hiểu câu hỏi này. Bạn thử hỏi: lịch đấu, bảng xếp hạng, cách đăng ký... Để nhận tin dự đoán riêng, vào web giải đấu, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" rồi nhắn mình: LINK <mã>");
       }
     }
   } catch (x) {}
