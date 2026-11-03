@@ -53,7 +53,10 @@ module.exports = async (req, res) => {
     const m = findMsg(req.body);
     if (!m) console.log("zalo-raw", JSON.stringify(req.body).slice(0, 600));
     if (m) {
-      const chat = m.chat, text = String(m.text || "").trim();
+      const chat = m.chat, raw = String(m.text || "").trim();
+      // bỏ phần @tên-bot ở đầu tin nhắn nhóm để bot chỉ đọc câu hỏi
+      const botName = (E.BOT_NAME || "Bot HO Synergy League").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const text = raw.replace(new RegExp("^\\s*@" + botName + "\\s*", "i"), "").trim();
       const priv = String(chat.chat_type || "").toUpperCase() === "PRIVATE";
       const link = text.match(/^\/?link\s+([A-Za-z0-9]{4,16})/i);
       console.log("zalo-msg", chat.chat_type, JSON.stringify(text.slice(0, 80)));
@@ -73,7 +76,7 @@ module.exports = async (req, res) => {
         const hit = dyn ? null : faqMatch(text, await faqRows());
         if (dyn) await send(chat.id, dyn);
         else if (hit) await send(chat.id, hit.ans.replace(/\{link\}/gi, E.SITE_URL || ""));
-        else if (priv || /^\s*@/.test(text)) await send(chat.id, "Xin chào! Mình chưa hiểu câu hỏi này. Bạn thử hỏi: lịch đấu, bảng xếp hạng, cách đăng ký... Để nhận tin dự đoán riêng, vào web giải đấu, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" rồi nhắn mình: LINK <mã>");
+        else if (priv || /^\s*@/.test(raw)) await send(chat.id, "Xin chào! Mình chưa hiểu câu hỏi này. Bạn thử hỏi: lịch đấu, bảng xếp hạng, cách đăng ký... Để nhận tin dự đoán riêng, vào web giải đấu, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" rồi nhắn mình: LINK <mã>");
       }
     }
   } catch (x) {}
