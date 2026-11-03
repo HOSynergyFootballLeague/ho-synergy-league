@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
         await send(chat.id, ok ? "✅ Đã liên kết Zalo với tài khoản của bạn. Bot sẽ nhắn riêng phần dự đoán và kết quả cho bạn!" : "❌ Mã không đúng hoặc đã hết hạn (15 phút). Bạn vào web, tab Cầu thủ, bấm \"Lấy mã liên kết Zalo\" để lấy mã mới nhé.");
       } else if (priv || text) {
         let dyn = null;
-        try { dyn = await answer(E, text, [String(chat.id), m.from && m.from.id ? String(m.from.id) : null].filter(Boolean)); } catch (x) { /* bỏ qua, dùng bảng câu hỏi */ }
+        try { dyn = await answer(E, text, [String(chat.id), m.from && m.from.id ? String(m.from.id) : null].filter(Boolean), priv); } catch (x) { /* bỏ qua, dùng bảng câu hỏi */ }
         const hit = dyn ? null : faqMatch(text, await faqRows());
         if (dyn) await send(chat.id, dyn);
         else if (hit) await send(chat.id, hit.ans.replace(/\{link\}/gi, E.SITE_URL || ""));
