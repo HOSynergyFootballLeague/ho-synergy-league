@@ -1,6 +1,6 @@
 // Bot Zalo HO Synergy League - chạy mỗi sáng 8:00 (giờ VN) qua Vercel Cron
 const { T, standings } = require("../lib/core.js");
-const { weatherText } = require("../lib/weather.js");
+const { weatherText, searchLocations, simplify } = require("../lib/weather.js");
 const weatherBlock = async () => { try { const w = await weatherText(E); return w ? "\n\n" + w : ""; } catch (x) { return ""; } };
 const E = process.env;
 const MIN = 7; // số người đăng ký tối thiểu mỗi đội
@@ -123,6 +123,10 @@ module.exports = async (req, res) => {
   const okAuth = E.CRON_SECRET && (req.headers.authorization === `Bearer ${E.CRON_SECRET}` || q.key === E.CRON_SECRET);
   if (!okAuth) return res.status(401).json({ error: "unauthorized" });
   try {
+    if (q.mode === "location") { // tra mã địa điểm AccuWeather: ?mode=location&q=Hanoi
+      try { const r = await searchLocations(E, q.q || "Hanoi"); return res.status(200).json({ notes: r.notes, results: simplify(r.results) }); }
+      catch (x) { return res.status(200).json({ ok: false, error: String(x.message || x) }); }
+    }
     if (q.mode === "weather") { // kiểm tra kết nối AccuWeather, hiện đúng lỗi nếu có
       try { const t = await weatherText(E); return res.status(200).json(t ? { ok: true, text: t } : { ok: false, error: "Chưa cài ACCUWEATHER_API_KEY" }); }
       catch (x) { return res.status(200).json({ ok: false, error: String(x.message || x) }); }
