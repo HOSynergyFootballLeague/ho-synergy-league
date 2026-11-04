@@ -123,6 +123,10 @@ module.exports = async (req, res) => {
   const okAuth = E.CRON_SECRET && (req.headers.authorization === `Bearer ${E.CRON_SECRET}` || q.key === E.CRON_SECRET);
   if (!okAuth) return res.status(401).json({ error: "unauthorized" });
   try {
+    if (q.mode === "weather") { // kiểm tra kết nối AccuWeather, hiện đúng lỗi nếu có
+      try { const t = await weatherText(E); return res.status(200).json(t ? { ok: true, text: t } : { ok: false, error: "Chưa cài ACCUWEATHER_API_KEY" }); }
+      catch (x) { return res.status(200).json({ ok: false, error: String(x.message || x) }); }
+    }
     if (q.mode === "updates") return res.status(200).json(await zalo("getUpdates", { timeout: "5" }));
     if (q.mode === "webhookinfo") return res.status(200).json(await zalo("getWebhookInfo"));
     if (q.mode === "setwebhook") return res.status(200).json(await zalo("setWebhook", { url: E.SITE_URL.replace(/\/$/, "") + "/api/hook", secret_token: E.CRON_SECRET }));
