@@ -42,6 +42,25 @@ textarea{width:100%;box-sizing:border-box}
 .st{font-size:13px}.st td,.st th{padding:7px 4px}.st td.l{white-space:nowrap;min-width:140px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.cols>div:last-child{text-align:right}
 .me td{font-weight:800}
+.pitch{background:repeating-linear-gradient(#2f8f55 0 34px,#2a8450 34px 68px);border:2px solid #ffffff66;border-radius:12px;padding:6px 4px;margin:6px 0}
+.prow{display:flex;justify-content:space-around;margin:14px 0}
+.pchip{display:flex;flex-direction:column;align-items:center;width:68px;color:#fff;text-decoration:none;font-size:11px}
+.pnum{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;border:2px solid #fff;font-size:13px}
+.pnum.empty{background:#0007}
+.pname{margin-top:2px;text-shadow:0 1px 2px #000;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lt{margin-top:8px}
+.fc{width:270px;margin:8px auto;border-radius:22px;padding:14px 16px 12px;box-shadow:0 6px 18px #0004;border:3px solid #ffffff66}
+.fc.gold{background:linear-gradient(145deg,#f7e08a,#d7a92c 55%,#f3d46a);color:#2b1d00}
+.fc.silver{background:linear-gradient(145deg,#f2f4f8,#aab3c2 55%,#e7ebf2);color:#1f2a3a}
+.fc.bronze{background:linear-gradient(145deg,#e6b48a,#b07445 55%,#e0a979);color:#3a2310}
+.fc.special{background:linear-gradient(145deg,#0f1f4d,#5a2fb0 55%,#1b6dd6);color:#fff}
+.fct{display:flex;justify-content:space-between;align-items:center}
+.fco{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.fco b{font-size:42px;line-height:1}.fco span{font-weight:800;font-size:15px}
+.fcn{text-align:center;font-weight:800;font-size:21px;margin:8px 0 6px;letter-spacing:1px;border-bottom:2px solid currentColor;padding-bottom:6px}
+.fcs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 4px;text-align:center;font-size:12px}
+.fcs b{display:block;font-size:22px}
+.fcv{text-align:center;font-weight:700;margin-top:10px;font-size:14px}
 </style></head><body>
 <div class="w">
 <div id="stat" class="mut sm" style="text-align:center;margin:0 0 4px"></div>
@@ -59,7 +78,7 @@ const T=["Mượt mà","Hài vãi","Phòng kính","VPS United","Platform","Lá c
 const COL=["#2563eb","#0f172a","#dc2626","#d97706","#7c3aed","#334155"];
 let M=[];
 const POS=["GK","LB","CB","RB","MF","CF"],PN={GK:"Thủ môn",LB:"Hậu vệ trái",CB:"Trung vệ",RB:"Hậu vệ phải",MF:"Tiền vệ",CF:"Tiền đạo cắm"};
-const S={roles:{},det:{},vall:false,fp:[],zl:false,zcode:null,att:{},pv:null,tab:"home",rd:"all",tm:"",open:null,edit:null,draft:null,res:{},players:{},news:{},tav:{},cfg:{},pred:{},uid:null,admin:false,loaded:false};
+const S={lu:{},ld:{},lo:{},roles:{},det:{},vall:false,fp:[],zl:false,zcode:null,att:{},pv:null,tab:"home",rd:"all",tm:"",open:null,edit:null,draft:null,res:{},players:{},news:{},tav:{},cfg:{},pred:{},uid:null,admin:false,loaded:false};
 const $=s=>document.querySelector(s);
 const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
@@ -92,12 +111,15 @@ function home(){
  return h}
 
 const fv=n=>n.toFixed(1).replace(".",",");
-const PR_RIGHT=1,PR_EXACT=3;
-function pscore(p){const r=R(p.match_id);if(!r||typeof r.h!=="number")return 0;const out=r.h>r.a?"h":r.h<r.a?"a":"d",has=p.pred_home!=null&&p.pred_away!=null,w=p.winner||(has?(p.pred_home>p.pred_away?"h":p.pred_home<p.pred_away?"a":"d"):null);if(has&&p.pred_home===r.h&&p.pred_away===r.a)return PR_EXACT;return w===out?PR_RIGHT:0}
-const pbeer=uid=>S.fp.filter(p=>p.user_id===uid).reduce((a,p)=>a+pscore(p),0);
-function predBoard(){const m={};S.fp.forEach(p=>{const x=m[p.user_id]=m[p.user_id]||{n:p.name,b:0,c:0,t:0};x.t++;const s=pscore(p);if(s){x.b+=s;x.c++}});
- const L=Object.entries(m).sort((a,b)=>b[1].b-a[1].b||b[1].c-a[1].c).slice(0,10);
- return `<h2>🔮 Thưởng dự đoán</h2>`+(L.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th>Đúng</th><th>🍺</th></tr>${L.map(([k,x],i)=>`<tr${k===S.uid?' class="me"':""}><td>${i+1}</td><td class="l"><a href="#p-${e(k)}" style="color:inherit;font-weight:600">${e(S.players[k]?.name||x.n)}</a></td><td>${x.c}/${x.t}</td><td>${fv(x.b)}</td></tr>`).join("")}</table></div><div class="mut sm">Dự đoán đúng kết quả +${PR_RIGHT}🍺, đúng tỷ số +${PR_EXACT}🍺. Thưởng này không cộng vào giá trị chuyển nhượng.</div>`:`<div class="mut sm">Chưa có kết quả dự đoán.</div>`)}
+const PR_RIGHT=1,PR_EXACT=3,START=10,MAXBET=5;
+function pbase(p){const r=R(p.match_id);if(!r||typeof r.h!=="number")return 0;const out=r.h>r.a?"h":r.h<r.a?"a":"d",has=p.pred_home!=null&&p.pred_away!=null,w=p.winner||(has?(p.pred_home>p.pred_away?"h":p.pred_home<p.pred_away?"a":"d"):null);if(has&&p.pred_home===r.h&&p.pred_away===r.a)return PR_EXACT;return w===out?PR_RIGHT:0}
+function pscore(p){const r=R(p.match_id);if(!r||typeof r.h!=="number")return 0;const b=pbase(p),s=p.stake||0;return b+(s?(b===PR_EXACT?3*s:b===PR_RIGHT?s:-s):0)}
+const wallet=uid=>Math.max(0,START+S.fp.filter(p=>p.user_id===uid).reduce((a,p)=>a+pscore(p),0));
+const pendBet=()=>Object.entries(S.pred).reduce((a,[mid,p])=>{const m=M.find(x=>x.id===mid);return a+(m&&!ok(m)?(p.s||0):0)},0);
+const avail=()=>Math.max(0,wallet(S.uid)-pendBet());
+function predBoard(){const m={};S.fp.forEach(p=>{const x=m[p.user_id]=m[p.user_id]||{n:p.name,b:0,c:0,t:0};x.t++;x.b+=pscore(p);if(pbase(p))x.c++});
+ const L=Object.entries(m).map(([k,x])=>({k,x,w:Math.max(0,START+x.b)})).sort((a,b)=>b.w-a.w||b.x.c-a.x.c).slice(0,10);
+ return `<h2>🍺 Ví bia dự đoán</h2>`+(L.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th>Đúng</th><th>🍺</th></tr>${L.map((r,i)=>`<tr${r.k===S.uid?' class="me"':""}><td>${i+1}</td><td class="l"><a href="#p-${e(r.k)}" style="color:inherit;font-weight:600">${e(S.players[r.k]?.name||r.x.n)}</a></td><td>${r.x.c}/${r.x.t}</td><td>${r.w}</td></tr>`).join("")}</table></div><div class="mut sm">Ví khởi điểm ${START}🍺. Đoán đúng kết quả +${PR_RIGHT}🍺, đúng tỷ số +${PR_EXACT}🍺. Cược thêm tối đa ${MAXBET}🍺 mỗi trận: đúng kết quả +cược, đúng tỷ số +3×cược, sai mất cược. Ví bia không cộng vào giá trị chuyển nhượng.</div>`:`<div class="mut sm">Chưa có kết quả dự đoán.</div>`)}
 function val(uid){const p=S.players[uid];let b=5,l=5;if(!p)return{b,l};
  const mine=x=>x.pid?x.pid===uid:(p.team!=null&&x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase());
  M.forEach(m=>{if(!ok(m))return;const r=R(m.id),ev=(r.ev||[]).filter(mine);
@@ -117,6 +139,65 @@ function valBoard(){const all=Object.entries(S.players).filter(([k,p])=>p.team!=
  if(!S.vall&&mi>=3)body+=`<tr><td colspan="5" class="mut">⋯</td></tr>`+row(all[mi],mi);
  return `<h2>💰 Giá trị chuyển nhượng</h2>`+(all.length?`<div class="sc"><table><tr><th>#</th><th class="l">Cầu thủ</th><th class="l">Đội</th><th>🍺</th><th>🥜</th></tr>${body}</table></div>${all.length>3?`<div class="row" style="justify-content:center"><button class="b s" data-a="vall">${S.vall?"Thu gọn":"Xem thêm ("+(all.length-3)+" cầu thủ)"}</button></div>`:""}<div class="mut sm">Khởi điểm 5🍺 5🥜. Tham gia trận +0,5 mỗi loại (vòng 1 tính mặc định cho cầu thủ đã vào đội, từ vòng 2 phải đăng ký tham gia); đội thắng +1 mỗi loại, đội thua −1🍺; ghi bàn +0,5 mỗi loại; thủ môn (GK) giữ sạch lưới +0,5 mỗi loại; thẻ vàng −0,5🍺, thẻ đỏ −1🍺; phản lưới không tính. Thấp nhất là 0.</div>`:`<div class="mut sm">Chưa có cầu thủ đăng ký đội.</div>`)}
 function evCols(r,m,del){const ic={g:"⚽",og:"⚽",y:"🟨",r:"🟥"};const col=tm=>r.ev.map((x,i)=>x.tm===tm?`<div class="sm">${ic[x.t]} ${e(x.n)}${x.t==="og"?` <span class="mut">(phản lưới)</span>`:""}${del?` <button class="b x" data-a="dev" data-i="${i}">✕</button>`:""}</div>`:"").join("");return `<div class="cols"><div><b class="sm">${e(T[m.h])}</b>${col(m.h)}</div><div><b class="sm">${e(T[m.a])}</b>${col(m.a)}</div></div>`}
+const FORM={"3-2-1":[3,2,1],"2-3-1":[2,3,1],"2-2-2":[2,2,2],"4-1-1":[4,1,1],"1-1-4":[1,1,4]};
+const canLine=tm=>!!S.uid&&(S.admin||S.roles[tm]?.c===S.uid||S.roles[tm]?.o===S.uid);
+function pitch(f,slots,tm){const [d,mm]=FORM[f]||FORM["2-2-2"];
+ const chip=id=>{const p=S.players[id];return p?`<a class="pchip" href="#p-${e(id)}"><span class="pnum" style="background:${COL[tm]}">${e(p.num)}</span><span class="pname">${e(p.name)}</span></a>`:`<span class="pchip"><span class="pnum empty">?</span><span class="pname">—</span></span>`};
+ const row=(a,b)=>`<div class="prow">${slots.slice(a,b).map(chip).join("")}</div>`;
+ return `<div class="pitch">${row(1+d+mm,7)}${row(1+d,1+d+mm)}${row(1,1+d)}${row(0,1)}</div>`}
+function lineEditor(m,tm,key,ed){const [d,mm,fw]=FORM[ed.f],att=S.att[m.id]||[],ros=Object.entries(S.players).filter(([k,x])=>x.team===tm).sort((a,b)=>a[1].num-b[1].num);
+ const opts=sel=>`<option value="">— Trống —</option>`+ros.map(([k,x])=>`<option value="${e(k)}" ${sel===k?"selected":""}>${att.includes(k)?"✅ ":""}${e(x.name)} (#${e(x.num)}${x.position?" "+e(x.position):""})</option>`).join("");
+ const sl=(i,lab)=>`<div class="row sm"><span style="width:92px">${lab}</span><select data-c="lslot" data-k="${key}" data-i="${i}">${opts(ed.s[i])}</select></div>`;
+ let h=`<div class="row sm">Sơ đồ <select data-c="lform" data-k="${key}">${Object.keys(FORM).map(f=>`<option ${f===ed.f?"selected":""}>${f}</option>`).join("")}</select> <span class="mut">(✅ = đã đăng ký tham gia)</span></div>`+sl(0,"🧤 Thủ môn");
+ let i=1;for(let a=0;a<d;a++,i++)h+=sl(i,`🛡 Hậu vệ ${a+1}`);
+ for(let a=0;a<mm;a++,i++)h+=sl(i,`⚙️ Tiền vệ ${a+1}`);
+ for(let a=0;a<fw;a++,i++)h+=sl(i,`🎯 Tiền đạo ${a+1}`);
+ return h+pitch(ed.f,ed.s,tm)+`<div class="row"><button class="b" data-a="lsave" data-m="${m.id}" data-t="${tm}">Lưu đội hình</button><button class="b s" data-a="lcancel" data-k="${key}">Hủy</button></div>`}
+function teamLineup(m,tm){const key=m.id+"|"+tm,cur=S.lu[key],ed=S.ld[key];
+ let h=`<div class="lt"><b class="sm">${logo(tm,18)} ${e(T[tm])}</b>`;
+ if(ed)h+=lineEditor(m,tm,key,ed);
+ else{h+=cur?`<div class="sm mut">Sơ đồ ${e(cur.f)}</div>${pitch(cur.f,cur.s,tm)}`:`<div class="sm mut">Chưa xếp đội hình.</div>`;
+  if(canLine(tm)&&!ok(m))h+=`<div class="row"><button class="b s" data-a="ledit" data-m="${m.id}" data-t="${tm}">✏️ Xếp đội hình</button></div>`}
+ return h+`</div>`}
+function lineBlock(m,always){
+ if(!always&&!S.lo[m.id])return `<div class="row"><button class="b s" data-a="lo" data-m="${m.id}">📋 Đội hình ra sân</button></div>`;
+ return `<div class="sm" style="margin-top:8px"><b>📋 Đội hình ra sân</b></div>${teamLineup(m,m.h)}${teamLineup(m,m.a)}`+(always?"":`<div class="row"><button class="b s" data-a="lo" data-m="${m.id}">Ẩn đội hình</button></div>`)}
+
+// ---- Thẻ cầu thủ ----
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function pstats(uid){const p=S.players[uid],o={played:0,wins:0,goals:0,y:0,r:0,cs:0,ga:0,tm:0,pc:0,pt:0};if(!p)return o;
+ const mine=x=>x.pid?x.pid===uid:(p.team!=null&&x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase());
+ M.forEach(m=>{if(!ok(m))return;const r=R(m.id),ev=(r.ev||[]).filter(mine),inM=p.team===m.h||p.team===m.a;if(inM)o.tm++;
+  if(!((inM&&(m.r===1||(S.att[m.id]||[]).includes(uid)))||ev.length))return;
+  o.played++;const t=inM?p.team:ev[0]?.tm;
+  if(t===m.h||t===m.a){const gf=t===m.h?r.h:r.a,ga=t===m.h?r.a:r.h;if(gf>ga)o.wins++;o.ga+=ga;if(ga===0)o.cs++}
+  ev.forEach(x=>{if(x.t==="g")o.goals++;else if(x.t==="y")o.y++;else if(x.t==="r")o.r++})});
+ S.fp.filter(x=>x.user_id===uid).forEach(x=>{o.pt++;if(pbase(x))o.pc++});return o}
+function ratings(uid){const o=pstats(uid),p=S.players[uid]||{},gk=p.position==="GK";
+ const SHO=clamp(45+o.goals*12,45,99),ATT=o.tm?clamp(Math.round(45+54*o.played/o.tm),45,99):50,DEF=o.played?clamp(Math.round(99-12*(o.ga/o.played)),45,99):50,WIN=o.played?Math.round(45+54*o.wins/o.played):50,PRE=o.pt?Math.round(45+54*o.pc/o.pt):50,FP=clamp(99-o.y*12-o.r*30,30,99);
+ const ovr=Math.round(gk?(SHO*.5+ATT+DEF*2+WIN+PRE+FP)/6.5:(SHO*1.5+ATT+DEF+WIN+PRE+FP)/6.5);
+ return{SHO,ATT,DEF,WIN,PRE,FP,ovr,tier:ovr>=90?"special":ovr>=80?"gold":ovr>=65?"silver":"bronze"}}
+function fcard(uid){const p=S.players[uid];if(!p)return "";const r=ratings(uid),v=val(uid);
+ const st=[["SÚT",r.SHO],["CẦN",r.ATT],["THỦ",r.DEF],["THẮNG",r.WIN],["ĐOÁN",r.PRE],["SẠCH",r.FP]];
+ return `<div class="fc ${r.tier}"><div class="fct"><div class="fco"><b>${r.ovr}</b><span>${e(p.position||"—")}</span>${p.team!=null?logo(p.team,28):""}</div>${pav(p,96)}</div><div class="fcn">${e(String(p.name).toUpperCase())}</div><div class="fcs">${st.map(([k,x])=>`<div><b>${x}</b>${k}</div>`).join("")}</div><div class="fcv">🍺 ${fv(v.b)} · 🥜 ${fv(v.l)}${p.num!=null?` · #${e(p.num)}`:""}</div></div><div class="row" style="justify-content:center"><button class="b" data-a="savecard" data-u="${e(uid)}">📸 Lưu ảnh thẻ</button></div>`}
+const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
+async function saveCard(uid){const p=S.players[uid];if(!p)return;const r=ratings(uid),v=val(uid),W=600,H=840;
+ const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
+ const pal={gold:["#f7e08a","#d7a92c","#f3d46a","#2b1d00"],silver:["#f2f4f8","#aab3c2","#e7ebf2","#1f2a3a"],bronze:["#e6b48a","#b07445","#e0a979","#3a2310"],special:["#0f1f4d","#5a2fb0","#1b6dd6","#ffffff"]}[r.tier];
+ const rr=(x,y,w,h,k)=>{g.beginPath();g.moveTo(x+k,y);g.arcTo(x+w,y,x+w,y+h,k);g.arcTo(x+w,y+h,x,y+h,k);g.arcTo(x,y+h,x,y,k);g.arcTo(x,y,x+w,y,k);g.closePath()};
+ const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,pal[0]);gr.addColorStop(.55,pal[1]);gr.addColorStop(1,pal[2]);
+ rr(10,10,W-20,H-20,44);g.fillStyle=gr;g.fill();g.lineWidth=6;g.strokeStyle="#ffffff99";g.stroke();
+ g.fillStyle=pal[3];g.textAlign="left";g.font="bold 100px system-ui,sans-serif";g.fillText(r.ovr,60,160);g.font="bold 36px system-ui,sans-serif";g.fillText(p.position||"—",64,208);
+ if(p.team!=null){try{const im=await loadImg(img(S.tav[p.team]?.img)?S.tav[p.team].img:LOGO[p.team]);g.drawImage(im,60,226,72,72)}catch(x){}}
+ g.save();g.beginPath();g.arc(405,205,115,0,7);g.clip();
+ try{if(img(p.av)){g.drawImage(await loadImg(p.av),290,90,230,230)}else{g.fillStyle=pal[3]+"33";g.fillRect(290,90,230,230);g.fillStyle=pal[3];g.font="bold 130px system-ui,sans-serif";g.textAlign="center";g.fillText(String(p.name||"?")[0].toUpperCase(),405,250)}}catch(x){}
+ g.restore();g.fillStyle=pal[3];g.textAlign="center";g.font="bold 52px system-ui,sans-serif";g.fillText(String(p.name).toUpperCase().slice(0,16),W/2,395);g.fillRect(80,415,W-160,4);
+ [["SÚT",r.SHO],["CẦN",r.ATT],["THỦ",r.DEF],["THẮNG",r.WIN],["ĐOÁN",r.PRE],["SẠCH",r.FP]].forEach(([k,x],i)=>{const cx=130+(i%3)*170,cy=515+Math.floor(i/3)*130;g.font="bold 64px system-ui,sans-serif";g.fillText(x,cx,cy);g.font="26px system-ui,sans-serif";g.fillText(k,cx,cy+38)});
+ g.font="bold 36px system-ui,sans-serif";g.fillText(`🍺 ${fv(v.b)}    🥜 ${fv(v.l)}`,W/2,750);g.font="24px system-ui,sans-serif";g.fillText(`HO Synergy League 2026${p.num!=null?" · #"+p.num:""}`,W/2,795);
+ c.toBlob(async b=>{if(!b)return;const f=new File([b],"the-cau-thu.png",{type:"image/png"});
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:p.name});return}}catch(x){}
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="the-"+String(p.name).replace(/\W+/g,"-")+".png";a.click()},"image/png")}
+
 const rname=(i,k)=>{const id=S.roles[i]?.[k],p=S.players[id];return p&&p.team===i?e(p.name):"—"};
 function mcard(m){
  const r=R(m.id),pl=ok(m),p=S.pred[m.id],cl=!!S.cfg.main?.closed,open=!!S.det[m.id],mine=S.players[S.uid];
@@ -136,18 +217,19 @@ function mcard(m){
  if(pl){
   if(p&&p.w){const w=r.h>r.a?"h":r.h<r.a?"a":"d";h+=`<div class="sm mut">Bạn dự đoán ${p.w===w?"đúng ✅":"chưa đúng ❌"}${p.h!==""?` (${e(p.h)}-${e(p.a)})`:""}</div>`}
   h+=`<div class="row"><button class="b s" data-a="det" data-m="${m.id}">${open||S.edit===m.id?"Ẩn chi tiết":"Xem chi tiết"}</button></div>`;
-  if(open||S.edit===m.id){if(r.ev?.length)h+=evCols(r,m,false);h+=att()+adm()}
+  if(open||S.edit===m.id){if(r.ev?.length)h+=evCols(r,m,false);h+=att()+lineBlock(m,true)+adm()}
  }else{
-  h+=att();
+  h+=att();h+=lineBlock(m,false);
   if(S.uid){
-   if(p){const wt=p.w==="h"?e(T[m.h])+" thắng":p.w==="a"?e(T[m.a])+" thắng":p.w==="d"?"Hòa":"";h+=`<div class="sm" style="margin-top:6px">🔒 Dự đoán của bạn: ${[wt,p.h!==""?"tỷ số "+e(p.h)+"-"+e(p.a):""].filter(Boolean).join(" · ")} (đã chốt)</div>`}
+   if(p){const wt=p.w==="h"?e(T[m.h])+" thắng":p.w==="a"?e(T[m.a])+" thắng":p.w==="d"?"Hòa":"";h+=`<div class="sm" style="margin-top:6px">🔒 Dự đoán của bạn: ${[wt,p.h!==""?"tỷ số "+e(p.h)+"-"+e(p.a):"",p.s?"cược "+p.s+"🍺":""].filter(Boolean).join(" · ")} (đã chốt)</div>`}
    else if(cl)h+=`<div class="sm mut">Đã đóng dự đoán.</div>`;
-   else h+=`<div class="pr row sm" data-m="${m.id}">Dự đoán: <select><option value="">—</option><option value="h">${e(T[m.h])} thắng</option><option value="d">Hòa</option><option value="a">${e(T[m.a])} thắng</option></select><input type="number" min="0"> - <input type="number" min="0"><button class="b s" data-a="savepred" data-m="${m.id}">Lưu dự đoán</button></div><div class="sm mut">Mỗi trận chỉ dự đoán một lần, không sửa được.</div>`}
+   else h+=`<div class="pr row sm" data-m="${m.id}">Dự đoán: <select><option value="">—</option><option value="h">${e(T[m.h])} thắng</option><option value="d">Hòa</option><option value="a">${e(T[m.a])} thắng</option></select><input type="number" min="0"> - <input type="number" min="0"> 🎲 cược <select class="stk">${Array.from({length:Math.min(MAXBET,avail())+1},(_,i)=>`<option>${i}</option>`).join("")}</select>🍺<button class="b s" data-a="savepred" data-m="${m.id}">Lưu dự đoán</button></div><div class="sm mut">Mỗi trận chỉ dự đoán một lần, không sửa được. Cược: đúng kết quả +cược, đúng tỷ số +3×cược, sai mất cược.</div>`}
   h+=adm()}
  return h+`</div>`}
 function sch(){
  let h=`<div class="row"><select data-c="rd"><option value="all">Tất cả các vòng</option>${[1,2,3,4,5].map(r=>`<option value="${r}" ${S.rd==r?"selected":""}>Vòng ${r}</option>`).join("")}</select><select data-c="tm"><option value="">Tất cả đội</option>${T.map((n,i)=>`<option value="${i}" ${S.tm===String(i)?"selected":""}>${e(n)}</option>`).join("")}</select></div>`;
  if(!S.uid)h+=`<div class="note">Đăng nhập (tab Cầu thủ) để dự đoán kết quả và đăng ký tham gia trận.</div>`;
+ if(S.uid)h+=`<div class="note">🍺 Ví bia: <b>${wallet(S.uid)}</b> · đang cược ${pendBet()} · khả dụng ${avail()}</div>`;
  const cl=!!S.cfg.main?.closed;
  if(cl)h+=`<div class="note">🔒 Dự đoán đã đóng.</div>`;
  if(S.admin)h+=`<div class="row"><button class="b ${cl?"":"x"}" data-a="togglepred">${cl?"🔓 Mở lại dự đoán":"🔒 Đóng dự đoán cho tất cả"}</button></div>`;
@@ -162,7 +244,7 @@ function sch(){
 function pplay(){const p=S.players[S.pv],bk=`<button class="b s" data-a="backp">← Quay lại</button>`;
  if(!p)return bk+`<div class="note" style="margin-top:10px">Không tìm thấy cầu thủ.</div>`;
  let g=0,y=0,rd=0;const rl=Object.entries(S.roles).flatMap(([t,x])=>[x.c===S.pv&&S.players[S.pv]?.team==t?`🎖 Đội trưởng ${T[t]}`:null,x.o===S.pv&&S.players[S.pv]?.team==t?`💼 Ông bầu ${T[t]}`:null]).filter(Boolean);M.forEach(m=>(R(m.id)?.ev||[]).forEach(x=>{if(x.pid?x.pid===S.pv:(x.tm===p.team&&String(x.n).trim().toLowerCase()===String(p.name).trim().toLowerCase())){x.t==="g"?g++:x.t==="y"?y++:x.t==="r"?rd++:0}}));
- return bk+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table>${rl.length?`<tr><td class="l mut">Vai trò</td><td class="l">${rl.map(e).join("<br>")}</td></tr>`:""}<tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Giá trị</td><td class="l"><b>${vt(S.pv)}</b></td></tr><tr><td class="l mut">Thưởng dự đoán</td><td class="l"><b>${fv(pbeer(S.pv))}🍺</b> <span class="mut sm">(không tính vào giá trị)</span></td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
+ return bk+fcard(S.pv)+`<div class="card" style="text-align:center">${pav(p,96)}<h2 style="font-size:20px">${e(p.name)}</h2>${p.team!=null?`<div>${logo(p.team,22)} ${e(T[p.team])} · số áo <b>${e(p.num)}</b></div>`:`<div class="mut">Chưa đăng ký đội</div>`}</div><div class="card"><table>${rl.length?`<tr><td class="l mut">Vai trò</td><td class="l">${rl.map(e).join("<br>")}</td></tr>`:""}<tr><td class="l mut">Vị trí</td><td class="l">${p.position?e(p.position)+" – "+e(PN[p.position]):"—"}</td></tr><tr><td class="l mut">Chiều cao</td><td class="l">${p.height?e(p.height)+" cm":"—"}</td></tr><tr><td class="l mut">Cân nặng</td><td class="l">${p.weight?e(p.weight)+" kg":"—"}</td></tr><tr><td class="l mut">Giá trị</td><td class="l"><b>${vt(S.pv)}</b></td></tr><tr><td class="l mut">Ví bia dự đoán</td><td class="l"><b>${wallet(S.pv)}🍺</b> <span class="mut sm">(không tính vào giá trị)</span></td></tr><tr><td class="l mut">Thống kê</td><td class="l">⚽ ${g} · 🟨 ${y} · 🟥 ${rd}</td></tr></table></div>`}
 function teams(){
  const P=Object.entries(S.players),mine=S.players[S.uid];
  if(S.open===null){
@@ -184,7 +266,7 @@ function me(){
  const p=S.players[S.uid]||{};
  return zaloBtn()+`<div class="card" style="text-align:center">${pav(p,80)}<div><label class="b s sm" style="margin-top:8px">Đổi avatar<input type="file" accept="image/*" data-c="av" hidden></label></div></div>
  <div class="card"><div class="row"><label>Tên<br><input id="pn" value="${e(p.name||"")}"></label><label>Ngày sinh<br><input id="pb" type="date" value="${e(p.bd||"")}"></label></div>
- <div class="row"><label>Chiều cao (cm)<br><input id="ph" type="number" min="100" max="230" value="${e(p.height??"")}"></label><label>Cân nặng (kg)<br><input id="pw" type="number" min="30" max="200" value="${e(p.weight??"")}"></label><label>Vị trí<br><select id="pp"><option value="">—</option>${POS.map(x=>`<option ${p.position===x?"selected":""}>${x}</option>`).join("")}</select></label></div><div class="sm mut">Đội: ${p.team!=null?e(T[p.team])+" · số áo "+e(p.num):"chưa đăng ký"}${p.cancel?" (đang chờ hủy)":""}${S.admin?" · Admin":""}</div><div class="row"><button class="b" data-a="savep">Lưu hồ sơ</button></div></div>
+ <div class="row"><label>Chiều cao (cm)<br><input id="ph" type="number" min="100" max="230" value="${e(p.height??"")}"></label><label>Cân nặng (kg)<br><input id="pw" type="number" min="30" max="200" value="${e(p.weight??"")}"></label><label>Vị trí<br><select id="pp"><option value="">—</option>${POS.map(x=>`<option ${p.position===x?"selected":""}>${x}</option>`).join("")}</select></label></div><div class="sm mut">Đội: ${p.team!=null?e(T[p.team])+" · số áo "+e(p.num):"chưa đăng ký"}${p.cancel?" (đang chờ hủy)":""}${S.admin?" · Admin":""}</div><div class="row"><button class="b" data-a="savep">Lưu hồ sơ</button><a class="b s" href="#p-${S.uid}">🃏 Xem thẻ của tôi</a></div></div>
  <div class="card"><b>Đổi mật khẩu</b><div class="row"><input id="np" type="password" placeholder="Mật khẩu mới"><button class="b s" data-a="chpw">Đổi</button></div></div>
  <button class="b x" data-a="logout">Đăng xuất</button>`}
 
@@ -194,7 +276,7 @@ addEventListener("focusout",()=>setTimeout(()=>dirty&&draw(),150));
 
 async function load(){
  try{
-  const [m,ev,pf,nw,ta,st,at,fp,tr]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*"),sb.from("attendance").select("*"),sb.rpc("finished_predictions"),sb.from("team_roles").select("*")]);
+  const [m,ev,pf,nw,ta,st,at,fp,tr,lu]=await Promise.all([sb.from("matches").select("*").order("round").order("id"),sb.from("events").select("*").order("id"),sb.from("profiles").select("*"),sb.from("news").select("*").order("created_at",{ascending:false}),sb.from("team_avatars").select("*"),sb.from("settings").select("*"),sb.from("attendance").select("*"),sb.rpc("finished_predictions"),sb.from("team_roles").select("*"),sb.from("lineups").select("*")]);
   M=(m.data||[]).map(x=>({id:x.id,r:x.round,h:x.home,a:x.away,date:new Date(x.match_date+"T00:00:00"),ref:x.referee||""}));
   S.res={};(m.data||[]).forEach(x=>{if(x.hg!=null&&x.ag!=null)S.res[x.id]={h:x.hg,a:x.ag,ev:[]}});
   (ev.data||[]).forEach(x=>S.res[x.match_id]?.ev.push({t:x.type,tm:x.team,n:x.player,pid:x.player_id}));
@@ -204,10 +286,11 @@ async function load(){
   S.cfg={main:{zalo:(st.data||[]).find(x=>x.key==="zalo")?.value||"",closed:(st.data||[]).find(x=>x.key==="pred_closed")?.value==="1"}};
   S.admin=!!S.players[S.uid]?.admin;
   S.fp=fp.data||[];
+  S.lu={};(lu.data||[]).forEach(x=>S.lu[x.match_id+"|"+x.team]={f:x.formation,s:x.slots});
   S.roles={};(tr.data||[]).forEach(x=>S.roles[x.team]={c:x.captain_id,o:x.owner_id});
   S.att={};(at.data||[]).forEach(x=>(S.att[x.match_id]||=[]).push(x.user_id));
   S.pred={};
-  if(S.uid){const pr=await sb.from("predictions").select("*").eq("user_id",S.uid);(pr.data||[]).forEach(x=>S.pred[x.match_id]={w:x.winner||"",h:x.pred_home??"",a:x.pred_away??""})}
+  if(S.uid){const pr=await sb.from("predictions").select("*").eq("user_id",S.uid);(pr.data||[]).forEach(x=>S.pred[x.match_id]={w:x.winner||"",h:x.pred_home??"",a:x.pred_away??"",s:x.stake||0})}
   S.zl=false;if(S.uid){const zl=await sb.from("zalo_links").select("user_id").eq("user_id",S.uid);S.zl=!!(zl.data&&zl.data.length);if(S.zl)S.zcode=null}
   S.loaded=true;
  }catch(x){console.error(x)}
@@ -228,11 +311,16 @@ const A={
  unlinkz:()=>{if(confirm("Hủy liên kết Zalo?"))W(async()=>{await X(sb.from("zalo_links").delete().eq("user_id",S.uid));S.zl=false})},
  attend:d=>W(()=>X(sb.from("attendance").insert({user_id:S.uid,match_id:d.m}))),
  unattend:d=>W(()=>X(sb.from("attendance").delete().eq("user_id",S.uid).eq("match_id",d.m))),
- savepred:d=>{const r=document.querySelector(`.pr[data-m="${d.m}"]`),[w,h,a]=r.querySelectorAll("select,input");
+ savepred:d=>{const r=document.querySelector(`.pr[data-m="${d.m}"]`),[w,h,a]=r.querySelectorAll("select,input"),stk=+(r.querySelector(".stk")?.value||0);
   if(!w.value&&h.value===""&&a.value==="")return alert("Chọn đội thắng hoặc nhập tỷ số.");
   if((h.value==="")!==(a.value===""))return alert("Nhập đủ tỷ số hai đội.");
-  if(!confirm("Mỗi trận chỉ được dự đoán một lần và không sửa được. Xác nhận lưu?"))return;
-  W(()=>X(sb.from("predictions").insert({user_id:S.uid,match_id:d.m,winner:w.value||null,pred_home:h.value===""?null:+h.value,pred_away:a.value===""?null:+a.value})))},
+  if(!confirm("Mỗi trận chỉ được dự đoán một lần và không sửa được."+(stk?` Bạn cược ${stk}🍺.`:"")+" Xác nhận lưu?"))return;
+  W(()=>X(sb.rpc("place_prediction",{p_match:d.m,p_winner:w.value||null,p_home:h.value===""?null:+h.value,p_away:a.value===""?null:+a.value,p_stake:stk})))},
+ lo:d=>{S.lo[d.m]=!S.lo[d.m];draw(1)},
+ ledit:d=>{const key=d.m+"|"+d.t,cur=S.lu[key];S.ld[key]={f:cur?cur.f:"2-2-2",s:cur?[...cur.s,...Array(7)].slice(0,7).map(x=>x||null):Array(7).fill(null)};draw(1)},
+ lcancel:d=>{delete S.ld[d.k];draw(1)},
+ lsave:d=>{const key=d.m+"|"+d.t,ed=S.ld[key];if(!ed)return;W(async()=>{await X(sb.rpc("save_lineup",{p_match:d.m,p_team:+d.t,p_formation:ed.f,p_slots:ed.s}));delete S.ld[key]})},
+ savecard:d=>{saveCard(d.u)},
  togglepred:()=>W(()=>X(sb.from("settings").upsert({key:"pred_closed",value:S.cfg.main?.closed?"0":"1"}))),
  nozalo:()=>alert("Admin chưa cài link bot Zalo."),
  tab:d=>{S.tab=d.t;S.open=null;S.pv=null;if(location.hash)location.hash="";draw(1)},open:d=>{S.open=+d.i;draw(1)},back:()=>{S.open=null;draw(1)},
@@ -261,6 +349,8 @@ const A={
  alert(rf.error?"Đã lưu kết quả, nhưng chưa lưu được trọng tài: cần chạy lệnh SQL thêm cột referee trong Supabase.":"Đã lưu kết quả.")})}
 };
 const C={
+ lslot:t=>{S.ld[t.dataset.k].s[+t.dataset.i]=t.value||null;draw(1)},
+ lform:t=>{S.ld[t.dataset.k].f=t.value;draw(1)},
  rd:t=>{S.rd=t.value;draw(1)},tm:t=>{S.tm=t.value;draw(1)},
  av:async t=>{if(t.files[0])W(async()=>X(sb.from("profiles").update({avatar:await shrink(t.files[0])}).eq("id",S.uid)))},
  tav:async t=>{if(t.files[0])W(async()=>X(sb.from("team_avatars").upsert({team:+t.dataset.i,img:await shrink(t.files[0])})))}
