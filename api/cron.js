@@ -41,18 +41,28 @@ function remind(day, today, all) {
     "\n\n" + rankText(all) + "\n\n" + link;
 }
 
+const START = 10; // ví bia khởi điểm
+const sg = n => (n > 0 ? "+" : "") + n;
 const outcome = m => (m.hg > m.ag ? "h" : m.hg < m.ag ? "a" : "d");
 const hasScore = p => p.pred_home != null && p.pred_away != null;
 const wOf = p => p.winner || (hasScore(p) ? (p.pred_home > p.pred_away ? "h" : p.pred_home < p.pred_away ? "a" : "d") : null);
-const pscore = (p, m) => {
+// thưởng gốc: đúng kết quả +1, đúng tỷ số +3
+const pbase = (p, m) => {
   if (!m || m.hg == null || m.ag == null) return 0;
   if (hasScore(p) && p.pred_home === m.hg && p.pred_away === m.ag) return PR_EXACT;
   return wOf(p) === outcome(m) ? PR_RIGHT : 0;
+};
+// gốc + tiền cược: đúng kết quả +cược, đúng tỷ số +3 x cược, sai mất cược
+const pscore = (p, m) => {
+  if (!m || m.hg == null || m.ag == null) return 0;
+  const b = pbase(p, m), s = p.stake || 0;
+  return b + (s ? (b === PR_EXACT ? 3 * s : b === PR_RIGHT ? s : -s) : 0);
 };
 const pdesc = (p, m) => {
   const w = wOf(p), parts = [];
   if (w) parts.push(w === "h" ? `${T[m.home]} thắng` : w === "a" ? `${T[m.away]} thắng` : "Hòa");
   if (hasScore(p)) parts.push(`tỷ số ${p.pred_home}-${p.pred_away}`);
+  if (p.stake) parts.push(`cược ${p.stake}🍺`);
   return parts.join(", ") || "—";
 };
 
@@ -61,12 +71,14 @@ function predText(day, preds) {
   day.forEach(m => {
     const ps = preds.filter(p => p.match_id === m.id);
     if (!ps.length) return;
-    const exact = ps.filter(p => pscore(p, m) === PR_EXACT).map(p => p.name);
-    const right = ps.filter(p => pscore(p, m) === PR_RIGHT).map(p => p.name);
+    const exact = ps.filter(p => pbase(p, m) === PR_EXACT).map(p => p.name);
+    const right = ps.filter(p => pbase(p, m) === PR_RIGHT).map(p => p.name);
     let l = `⚽ ${T[m.home]} ${m.hg}-${m.ag} ${T[m.away]} (${exact.length + right.length}/${ps.length} người đoán đúng)`;
     if (exact.length) l += `\n🎯 Đúng tỷ số (+${PR_EXACT}🍺): ${exact.join(", ")}`;
     if (right.length) l += `\n✅ Đúng kết quả (+${PR_RIGHT}🍺): ${right.join(", ")}`;
     if (!exact.length && !right.length) l += `\n😅 Chưa ai đoán đúng`;
+    const bets = ps.filter(p => (p.stake || 0) > 0).map(p => `${p.name} ${p.stake}🍺 (${sg(pscore(p, m) - pbase(p, m))})`);
+    if (bets.length) l += `\n🎲 Cược: ${bets.join(", ")}`;
     lines.push(l);
   });
   if (!lines.length) return "";
@@ -82,12 +94,12 @@ function dmRecap(day, mine, all) {
   const lines = day.map(m => {
     const p = mine.find(x => x.match_id === m.id);
     if (!p) return null;
-    const s = pscore(p, m);
-    return `⚽ ${T[m.home]} ${m.hg}-${m.ag} ${T[m.away]}\n   Bạn dự đoán: ${pdesc(p, m)}\n   ${s === PR_EXACT ? `🎯 Đúng tỷ số! +${PR_EXACT}🍺` : s === PR_RIGHT ? `✅ Đúng kết quả! +${PR_RIGHT}🍺` : "❌ Chưa đúng lần này"}`;
+    const b = pbase(p, m), s = p.stake || 0;
+    return `⚽ ${T[m.home]} ${m.hg}-${m.ag} ${T[m.away]}\n   Bạn dự đoán: ${pdesc(p, m)}\n   ${b === PR_EXACT ? `🎯 Đúng tỷ số! +${PR_EXACT}🍺` : b === PR_RIGHT ? `✅ Đúng kết quả! +${PR_RIGHT}🍺` : "❌ Chưa đúng lần này"}${s ? `\n   🎲 Tiền cược: ${sg(pscore(p, m) - b)}🍺` : ""}`;
   }).filter(Boolean);
   if (!lines.length) return null;
-  const total = mine.reduce((a, p) => a + pscore(p, all.find(m => m.id === p.match_id)), 0);
-  return `🔮 KẾT QUẢ DỰ ĐOÁN CỦA BẠN\n${lines.join("\n")}\n\n🍺 Tổng thưởng dự đoán của bạn: ${total}🍺 (không tính vào giá trị chuyển nhượng)\n${link}`;
+  const wallet = Math.max(0, START + mine.reduce((a, p) => a + pscore(p, all.find(m => m.id === p.match_id)), 0));
+  return `🔮 KẾT QUẢ DỰ ĐOÁN CỦA BẠN\n${lines.join("\n")}\n\n🍺 Ví bia hiện có: ${wallet}🍺 (không tính vào giá trị chuyển nhượng)\n${link}`;
 }
 
 function recap(day, yest, all, events, preds = []) {
