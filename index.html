@@ -49,18 +49,25 @@ textarea{width:100%;box-sizing:border-box}
 .pnum.empty{background:#0007}
 .pname{margin-top:2px;text-shadow:0 1px 2px #000;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lt{margin-top:8px}
-.fc{width:270px;margin:8px auto;border-radius:22px;padding:14px 16px 12px;box-shadow:0 6px 18px #0004;border:3px solid #ffffff66}
-.fc.gold{background:linear-gradient(145deg,#f7e08a,#d7a92c 55%,#f3d46a);color:#2b1d00}
-.fc.silver{background:linear-gradient(145deg,#f2f4f8,#aab3c2 55%,#e7ebf2);color:#1f2a3a}
-.fc.bronze{background:linear-gradient(145deg,#e6b48a,#b07445 55%,#e0a979);color:#3a2310}
-.fc.special{background:linear-gradient(145deg,#0f1f4d,#5a2fb0 55%,#1b6dd6);color:#fff}
-.fct{display:flex;justify-content:space-between;align-items:center}
-.fco{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
-.fco b{font-size:42px;line-height:1}.fco span{font-weight:800;font-size:15px}
-.fcn{text-align:center;font-weight:800;font-size:21px;margin:8px 0 6px;letter-spacing:1px;border-bottom:2px solid currentColor;padding-bottom:6px}
-.fcs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 4px;text-align:center;font-size:12px}
-.fcs b{display:block;font-size:22px}
-.fcv{text-align:center;font-weight:700;margin-top:10px;font-size:14px}
+.fc{width:290px;margin:10px auto;padding:4px;clip-path:polygon(10% 0,90% 0,100% 5%,100% 85%,50% 100%,0 85%,0 5%);background:linear-gradient(160deg,#fff3b0,#c9961f 55%,#8a6410)}
+.fci{padding:16px 14px 58px;clip-path:polygon(10% 0,90% 0,100% 5%,100% 85%,50% 100%,0 85%,0 5%);color:#3a2a06;background:radial-gradient(ellipse at 28% 8%,#fff8d0 0,transparent 48%),repeating-linear-gradient(115deg,#ffffff14 0 6px,#0000 6px 14px),linear-gradient(165deg,#f8e47d,#dcae3c 52%,#bd8f22)}
+.fc.special .fci{color:#fff;background:radial-gradient(ellipse at 28% 8%,#7aa6ff66 0,transparent 50%),repeating-linear-gradient(115deg,#ffffff10 0 6px,#0000 6px 14px),linear-gradient(165deg,#1a2f78,#4b2aa0 55%,#1a58c8)}
+.fc.special{background:linear-gradient(160deg,#cfe0ff,#6f7fe0 55%,#2b2f8f)}
+.fct{display:flex;justify-content:space-between;align-items:flex-start;padding:0 4px}
+.fcl{display:flex;flex-direction:column;align-items:center;gap:3px;width:62px;padding-top:6px}
+.fcr{font-size:46px;font-weight:900;line-height:1}
+.fcp{font-weight:800;font-size:16px}
+.fcb{width:40px;height:2px;background:currentColor;opacity:.55;margin:3px 0}
+.fcnum{font-weight:900;font-size:17px;margin-top:2px}
+.fcn{text-align:center;font-weight:900;font-size:22px;letter-spacing:1px;margin:10px 0 4px}
+.fcg{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;padding:6px 22px 0;border-top:2px solid #3a2a0655;position:relative}
+.fc.special .fcg{border-color:#ffffff55}
+.fcg>div{display:flex;flex-direction:column;gap:3px}
+.fcg>div:first-child{border-right:2px solid #3a2a0633;padding-right:8px}
+.fc.special .fcg>div:first-child{border-color:#ffffff44}
+.fcg span{font-size:13px;font-weight:700;letter-spacing:.5px}
+.fcg b{font-size:21px;font-weight:900;margin-right:6px;display:inline-block;min-width:28px;text-align:right}
+.fcv{text-align:center;font-weight:800;margin-top:8px;font-size:14px}
 </style></head><body>
 <div class="w">
 <div id="stat" class="mut sm" style="text-align:center;margin:0 0 4px"></div>
@@ -176,28 +183,33 @@ function pstats(uid){const p=S.players[uid],o={played:0,wins:0,goals:0,y:0,r:0,c
 function ratings(uid){const o=pstats(uid),p=S.players[uid]||{},gk=p.position==="GK";
  const SHO=clamp(45+o.goals*12,45,99),ATT=o.tm?clamp(Math.round(45+54*o.played/o.tm),45,99):50,DEF=o.played?clamp(Math.round(99-12*(o.ga/o.played)),45,99):50,WIN=o.played?Math.round(45+54*o.wins/o.played):50,PRE=o.pt?Math.round(45+54*o.pc/o.pt):50,FP=clamp(99-o.y*12-o.r*30,30,99);
  const ovr=Math.round(gk?(SHO*.5+ATT+DEF*2+WIN+PRE+FP)/6.5:(SHO*1.5+ATT+DEF+WIN+PRE+FP)/6.5);
- return{SHO,ATT,DEF,WIN,PRE,FP,ovr,tier:ovr>=90?"special":ovr>=80?"gold":ovr>=65?"silver":"bronze"}}
+ return{SHO,ATT,DEF,WIN,PRE,FP,ovr,tier:ovr>=90?"special":"gold"}}
 function fcard(uid){const p=S.players[uid];if(!p)return "";const r=ratings(uid),v=val(uid);
- const st=[["SÚT",r.SHO],["CẦN",r.ATT],["THỦ",r.DEF],["THẮNG",r.WIN],["ĐOÁN",r.PRE],["SẠCH",r.FP]];
- return `<div class="fc ${r.tier}"><div class="fct"><div class="fco"><b>${r.ovr}</b><span>${e(p.position||"—")}</span>${p.team!=null?logo(p.team,28):""}</div>${pav(p,96)}</div><div class="fcn">${e(String(p.name).toUpperCase())}</div><div class="fcs">${st.map(([k,x])=>`<div><b>${x}</b>${k}</div>`).join("")}</div><div class="fcv">🍺 ${fv(v.b)} · 🥜 ${fv(v.l)}${p.num!=null?` · #${e(p.num)}`:""}</div></div><div class="row" style="justify-content:center"><button class="b" data-a="savecard" data-u="${e(uid)}">📸 Lưu ảnh thẻ</button></div>`}
+ const c1=[["SHO",r.SHO],["DIL",r.ATT],["DEF",r.DEF]],c2=[["DRI",r.WIN],["GUS",r.PRE],["FAI",r.FP]],col=a=>`<div>${a.map(([k,x])=>`<span><b>${x}</b>${k}</span>`).join("")}</div>`;
+ return `<div class="fc ${r.tier}"><div class="fci"><div class="fct"><div class="fcl"><span class="fcr">${r.ovr}</span><span class="fcp">${e(p.position||"—")}</span><i class="fcb"></i>${p.team!=null?logo(p.team,34):""}${p.num!=null?`<span class="fcnum">#${e(p.num)}</span>`:""}</div>${pav(p,132)}</div><div class="fcn">${e(String(p.name).toUpperCase())}</div><div class="fcg">${col(c1)}${col(c2)}</div><div class="fcv">🍺 ${fv(v.b)} · 🥜 ${fv(v.l)}</div></div></div><div class="row" style="justify-content:center"><button class="b" data-a="savecard" data-u="${e(uid)}">📸 Lưu ảnh thẻ</button></div>`}
 const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
-async function saveCard(uid){const p=S.players[uid];if(!p)return;const r=ratings(uid),v=val(uid),W=600,H=840;
+async function saveCard(uid){const p=S.players[uid];if(!p)return;const r=ratings(uid),v=val(uid),W=600,H=840,sp=r.tier==="special";
  const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
- const pal={gold:["#f7e08a","#d7a92c","#f3d46a","#2b1d00"],silver:["#f2f4f8","#aab3c2","#e7ebf2","#1f2a3a"],bronze:["#e6b48a","#b07445","#e0a979","#3a2310"],special:["#0f1f4d","#5a2fb0","#1b6dd6","#ffffff"]}[r.tier];
- const rr=(x,y,w,h,k)=>{g.beginPath();g.moveTo(x+k,y);g.arcTo(x+w,y,x+w,y+h,k);g.arcTo(x+w,y+h,x,y+h,k);g.arcTo(x,y+h,x,y,k);g.arcTo(x,y,x+w,y,k);g.closePath()};
- const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,pal[0]);gr.addColorStop(.55,pal[1]);gr.addColorStop(1,pal[2]);
- rr(10,10,W-20,H-20,44);g.fillStyle=gr;g.fill();g.lineWidth=6;g.strokeStyle="#ffffff99";g.stroke();
- g.fillStyle=pal[3];g.textAlign="left";g.font="bold 100px system-ui,sans-serif";g.fillText(r.ovr,60,160);g.font="bold 36px system-ui,sans-serif";g.fillText(p.position||"—",64,208);
- if(p.team!=null){try{const im=await loadImg(img(S.tav[p.team]?.img)?S.tav[p.team].img:LOGO[p.team]);g.drawImage(im,60,226,72,72)}catch(x){}}
- g.save();g.beginPath();g.arc(405,205,115,0,7);g.clip();
- try{if(img(p.av)){g.drawImage(await loadImg(p.av),290,90,230,230)}else{g.fillStyle=pal[3]+"33";g.fillRect(290,90,230,230);g.fillStyle=pal[3];g.font="bold 130px system-ui,sans-serif";g.textAlign="center";g.fillText(String(p.name||"?")[0].toUpperCase(),405,250)}}catch(x){}
- g.restore();g.fillStyle=pal[3];g.textAlign="center";g.font="bold 52px system-ui,sans-serif";g.fillText(String(p.name).toUpperCase().slice(0,16),W/2,395);g.fillRect(80,415,W-160,4);
- [["SÚT",r.SHO],["CẦN",r.ATT],["THỦ",r.DEF],["THẮNG",r.WIN],["ĐOÁN",r.PRE],["SẠCH",r.FP]].forEach(([k,x],i)=>{const cx=130+(i%3)*170,cy=515+Math.floor(i/3)*130;g.font="bold 64px system-ui,sans-serif";g.fillText(x,cx,cy);g.font="26px system-ui,sans-serif";g.fillText(k,cx,cy+38)});
- g.font="bold 36px system-ui,sans-serif";g.fillText(`🍺 ${fv(v.b)}    🥜 ${fv(v.l)}`,W/2,750);g.font="24px system-ui,sans-serif";g.fillText(`HO Synergy League 2026${p.num!=null?" · #"+p.num:""}`,W/2,795);
+ const ink=sp?"#ffffff":"#3a2a06";
+ const shape=k=>{g.beginPath();g.moveTo(100+k,20+k);g.lineTo(500-k,20+k);g.lineTo(580-k,70+k);g.lineTo(580-k,700);g.lineTo(300,820-k*1.6);g.lineTo(20+k,700);g.lineTo(20+k,70+k);g.closePath()};
+ shape(0);let gr=g.createLinearGradient(0,0,W,H);if(sp){gr.addColorStop(0,"#cfe0ff");gr.addColorStop(.55,"#6f7fe0");gr.addColorStop(1,"#2b2f8f")}else{gr.addColorStop(0,"#fff3b0");gr.addColorStop(.55,"#c9961f");gr.addColorStop(1,"#8a6410")}g.fillStyle=gr;g.fill();
+ shape(10);gr=g.createLinearGradient(0,20,W,H);if(sp){gr.addColorStop(0,"#1a2f78");gr.addColorStop(.55,"#4b2aa0");gr.addColorStop(1,"#1a58c8")}else{gr.addColorStop(0,"#f8e47d");gr.addColorStop(.52,"#dcae3c");gr.addColorStop(1,"#bd8f22")}g.fillStyle=gr;g.fill();
+ g.save();shape(10);g.clip();const rg=g.createRadialGradient(190,90,10,190,90,380);rg.addColorStop(0,sp?"#7aa6ff88":"#fff8d0cc");rg.addColorStop(1,"#0000");g.fillStyle=rg;g.fillRect(0,0,W,H);
+ g.strokeStyle="#ffffff14";g.lineWidth=7;for(let x=-H;x<W;x+=26){g.beginPath();g.moveTo(x,H);g.lineTo(x+H*.5,0);g.stroke()}g.restore();
+ g.fillStyle=ink;g.textAlign="center";g.font="bold 118px system-ui,sans-serif";g.fillText(r.ovr,112,170);g.font="bold 42px system-ui,sans-serif";g.fillText(p.position||"—",112,222);
+ g.fillRect(72,240,80,5);
+ if(p.team!=null){try{const im=await loadImg(img(S.tav[p.team]?.img)?S.tav[p.team].img:LOGO[p.team]);g.drawImage(im,72,262,80,80)}catch(x){}}
+ if(p.num!=null){g.font="bold 46px system-ui,sans-serif";g.fillText("#"+p.num,112,395)}
+ g.save();g.beginPath();g.arc(390,215,128,0,7);g.clip();
+ try{if(img(p.av))g.drawImage(await loadImg(p.av),262,87,256,256);else{g.fillStyle=ink+"33";g.fillRect(262,87,256,256);g.fillStyle=ink;g.font="bold 140px system-ui,sans-serif";g.fillText(String(p.name||"?")[0].toUpperCase(),390,265)}}catch(x){}
+ g.restore();g.lineWidth=6;g.strokeStyle=ink+"66";g.beginPath();g.arc(390,215,128,0,7);g.stroke();
+ g.fillStyle=ink;g.textAlign="center";g.font="bold 54px system-ui,sans-serif";g.fillText(String(p.name).toUpperCase().slice(0,15),W/2,462);g.fillRect(90,484,W-180,4);
+ g.fillRect(W/2-1,512,3,180);
+ [[["SHO",r.SHO],["DIL",r.ATT],["DEF",r.DEF]],[["DRI",r.WIN],["GUS",r.PRE],["FAI",r.FP]]].forEach((col,ci)=>col.forEach(([k,x],i)=>{const y=560+i*62,bx=ci?340:120;g.textAlign="right";g.font="bold 54px system-ui,sans-serif";g.fillText(x,bx+80,y);g.textAlign="left";g.font="bold 32px system-ui,sans-serif";g.fillText(k,bx+96,y)}));
+ g.textAlign="center";g.font="bold 34px system-ui,sans-serif";g.fillText(`🍺 ${fv(v.b)}   🥜 ${fv(v.l)}`,W/2,742);
  c.toBlob(async b=>{if(!b)return;const f=new File([b],"the-cau-thu.png",{type:"image/png"});
   try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:p.name});return}}catch(x){}
   const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="the-"+String(p.name).replace(/\W+/g,"-")+".png";a.click()},"image/png")}
-
 const rname=(i,k)=>{const id=S.roles[i]?.[k],p=S.players[id];return p&&p.team===i?e(p.name):"—"};
 function mcard(m){
  const r=R(m.id),pl=ok(m),p=S.pred[m.id],cl=!!S.cfg.main?.closed,open=!!S.det[m.id],mine=S.players[S.uid];
